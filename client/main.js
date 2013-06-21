@@ -4,7 +4,6 @@ var bodyLayout
   , $openFilter
   , $openChat
   ;
-
 //layout
 Meteor.startup(function() {
   var $message = $('#message_list')

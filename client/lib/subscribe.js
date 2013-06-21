@@ -99,29 +99,29 @@ Meteor.Router.add(
             RouterRun.invalidate();
           }
       }
+  ,'/room/:rid/doc/:dc'       :
+      {'to'  : 'main_document'
+      ,'and' :
+          function(rid, did) {
+            debugger;
+            RouterParams = {'room' : rid, 'document' : did};
+            RouterRun.invalidate();
+          }
+      }
   ,'/room/:rid/doc/'       :
       {'to'  : 'main_document'
       ,'and' :
           function(rid) {
+            debugger;
             RouterParams = {'room' : rid};
             RouterRun.invalidate();
           }
       }
-  ,'/room/:rid/:cid/' :
-      {'to'  : 'main_chapter'
-      ,'and' :
-          function(rid, cid) {
-            RouterParams =
-                {'room'    : rid
-                ,'chapter' : cid
-                }
-            RouterRun.invalidate();
-          }
-      }  
   ,'/room/:rid/:cid/#:sid' :
       {'to'  : 'main_chapter'
       ,'and' :
           function(rid, cid, sid) {
+            debugger;
             RouterParams =
                 {'room'    : rid
                 ,'chapter' : cid
@@ -130,6 +130,18 @@ Meteor.Router.add(
             RouterRun.invalidate();
           }
       }
+  ,'/room/:rid/:cid/' :
+      {'to'  : 'main_chapter'
+      ,'and' :
+          function(rid, cid) {
+            debugger;
+            RouterParams =
+                {'room'    : rid
+                ,'chapter' : cid
+                }
+            RouterRun.invalidate();
+          }
+      }  
   ,'/character/:cid/'  :
       {'to'  : 'main_character'
       ,'and' :

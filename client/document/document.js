@@ -36,7 +36,10 @@ Template.main_document.events(
       }
   }
 )
-
+Template.main_document.rendered =
+    function() {
+      console.log(location.hash);
+    }
 
 //nav
 Template.main_document_nav.created =
