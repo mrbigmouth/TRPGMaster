@@ -1,0 +1,17 @@
+<head>
+  <title>TRPG Master</title>
+</head>
+
+<body>
+  <div class="ui-layout-center" style="padding: 10px;" id="main">
+    {{#isolate}} {{renderPage}} {{/isolate}}
+  </div>
+  <nav class="ui-layout-north navbar" style="padding: 10px;" id="nav">
+    {{> nav}}
+  </nav>
+  <aside class="ui-layout-south" id="message">
+    {{> message}}
+  </aside>
+  <footer style="display:none;">
+  </footer>
+</body>

@@ -1,0 +1,84 @@
+<template name="message">
+  <a class="btn btn-info pull-right openFilter" href="javascript:">
+    <i class="icon-list-alt" title="開啟篩選條件"></i>
+  </a>
+  <form id="message_filter" class="form-inline form-horizontal ui-layout-north" style="padding:5px 10px;" action="javascript:">
+    <label for="room">
+      <strong>選擇房間：</strong>
+      <select name="room">
+        <option value="">全部房間</option>
+        {{#isolate}}
+          {{#each allRooms}}
+            <option value="{{_id}}">{{name}}</option>
+          {{/each}}
+        {{/isolate}}
+      </select>
+    </label>
+    <label for="seeChat" class="checkbox">
+      <input type="checkbox" class="type" name="chat" checked="checked" /> 聊天
+    </label>
+    <label for="seeChat" class="checkbox">
+      <input type="checkbox" class="type" name="dice" checked="checked" /> 擲骰
+    </label>
+    <label for="seeChat" class="checkbox">
+      <input type="checkbox" class="type" name="outside" checked="checked" /> 場外
+    </label>
+    <label for="seeChat" class="checkbox">
+      <input type="checkbox" class="type" name="room" checked="checked" /> 團務
+    </label>
+    <label for="seeChat" class="checkbox">
+      <input type="checkbox" class="type" name="system" checked="checked" /> 系統
+    </label>
+  </form>
+  <ul id="message_list" class="ui-layout-center">
+    {{#isolate}}
+      {{> message_list}}
+    {{/isolate}}
+  </ul>
+  <a class="btn btn-info pull-right openChat" href="javascript:">
+    <i class="icon-comment" title="開啟發言欄"></i>
+  </a>
+  <form id="message_chat" class="form-inline form-horizontal ui-layout-south" style="padding:5px 10px;" action="javascript:">
+    {{> message_chat}}
+  </form>
+</template>
+
+<template name="message_list">  
+  {{#each allMsgs}}
+    <li>
+        {{#isolate}}
+          <span>{{timeChinese _id}}</span>
+          <span class="badge badge-success">{{roomName room}}</span>
+          <span class="badge">{{typeChinese type}}</span>
+          {{#if typeChat}}
+            <span>{{getNick user}}：</span>
+            <span>{{msg}}</span>
+          {{/if}}
+          {{#if typeSystem}}
+            <span>{{getNick user}}</span>
+            <span>{{msg}}</span>
+          {{/if}}
+          {{#if typeDice}}
+            {{#if result}}
+              {{#if isHide}}
+                <span class="badge badge-inverse">暗骰</span>
+              {{/if}}
+              <span>{{getNick user}}為{{who}}擲了一次{{name}}骰{{#if note}}（{{note}}）{{/if}} {{diceResult}}</span>
+            {{else}}
+              <span>擲骰結果載入中...</span>
+            {{/if}}
+          {{/if}}
+          {{#if haveLink}}
+            <span>　</span>
+            <a href="/room/{{room}}/{{chapter}}/#{{section}}">前往</a>
+          {{/if}}
+        {{/isolate}}
+    </li>
+  {{/each}}
+</template>
+
+<template name="message_chat">
+  <label for="newMsg">發言：</label>
+  <input type="text" class="msg input-xxlarge" name="newMsg" />
+  <button type="submit" class="btn btn-primary">送出</button>
+</template>

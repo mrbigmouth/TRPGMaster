@@ -1,0 +1,129 @@
+<body>
+  <form action="javascript:" class="modal hide fade form-horizontal" id="modal_form">
+    {{>modal_form}}
+  </form>
+</body>
+
+<template name="modal_form">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h4>{{title}}</h4>
+  </div>
+  {{#if login}}
+    {{>modal_form_login}}
+  {{/if}}
+  {{#if register}}
+    {{>modal_form_register}}
+  {{/if}}
+  {{#if account}}
+    {{>modal_form_account}}
+  {{/if}}
+  {{#if applyRoom}}
+    {{>modal_form_applyRoom}}
+  {{/if}}
+</template>
+
+
+<template name="modal_form_login">
+  <div class="modal-body">
+    <div class="control-group">
+      <label class="control-label" for="email"><strong>登入帳號或電子郵箱：</strong></label>
+      <div class="controls">
+        <input type="text" name="email" />
+      </div>
+    </div>
+    <div class="control-group">
+      <label class="control-label" for="password"><strong>密碼：</strong></label>
+      <div class="controls">
+        <input type="password" name="password" />
+      </div>
+    </div>
+    <div class="control-group" style="text-align:center;">
+      <a href="javascript:" class="facebook">以Facebook帳號登入</a>
+    </div>
+    <div class="control-group" style="text-align:center;">
+      <a href="javascript:" class="google">以Google帳號登入</a>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-primary">登入</button>
+    <button class="btn btn-info register">我要註冊</button>
+    <input type="reset" class="btn" value="重設" />
+  </div>
+</template>
+
+<template name="modal_form_register">
+  <div class="modal-body">
+    <div class="control-group">
+      <label class="control-label" for="email"><strong>電子郵箱：</strong></label>
+      <div class="controls">
+        <input type="text" name="email" />
+      </div>
+    </div>
+    <div class="control-group">
+      <label class="control-label" for="nick"><strong>暱稱：</strong></label>
+      <div class="controls">
+        <input type="text" name="nick" />
+      </div>
+    </div>
+    <div class="control-group">
+      <label class="control-label" for="password"><strong>密碼：</strong></label>
+      <div class="controls">
+        <input type="password" name="password" />
+      </div>
+    </div>
+    <div class="control-group">
+      <label class="control-label" for="confirmpassword"><strong>確認密碼：</strong></label>
+      <div class="controls">
+        <input type="password" name="confirmpassword" />
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-primary">註冊</button>
+    <button class="btn btn-info login">我要登入</button>
+    <input type="reset" class="btn" value="重設" />
+  </div>
+</template>
+
+
+<template name="modal_form_account">
+  <div class="modal-body">
+    <div class="control-group">
+      <label class="control-label" for="nick"><strong>暱稱：</strong></label>
+      <div class="controls">
+        <input type="text" class="nick" name="nick" value="{{nick}}" />
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-primary">送出</button>
+    <input type="reset" class="btn" value="重設" />
+  </div>
+</template>
+
+<template name="modal_form_applyRoom">
+  <div class="modal-body">
+    <label  for="name"><strong>團名：</strong></label>
+    <p>
+      <input type="text" class="span6 name" name="name" />
+    </p>
+    <label  for="rule"><strong>使用規則：</strong></label>
+    <p>
+      <select class="span6 rule" name="rule">
+        <option value="PF">Path finder</option>
+        <option value="DND35">D&D 3.5</option>
+        <option value="DND4">D&D 4</option>
+        <option value="mrbigmouth">神遺之地</option>
+      </select>
+    </p>
+    <label for="desc"><strong>開團說明：</strong></label>
+    <p>
+      <textarea name="desc" class="span6 desc" rows="8"></textarea>
+    </p>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-primary">進行申請</button>
+    <input type="reset" class="btn" value="重設" />
+  </div>
+</template>

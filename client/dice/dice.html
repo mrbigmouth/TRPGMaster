@@ -1,0 +1,81 @@
+<body>
+  <div id="dice_form" class="modal hide fade">
+    <form action="javascript:" class="form-inline">
+      {{>dice_form}}
+    </form>
+</div>
+</body>
+
+<template name="dice_form">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+      <h4>{{#isolate}} {{title}} {{/isolate}}</h4>
+    </div>
+  {{#constant}}
+    <div class="modal-body">
+      <div class="mainDice">
+        <p>
+          <label class="inline" for="who">
+            <strong>擲骰人</strong>
+            <input type="text" class="input-medium who" name="who" />
+          </label>
+          <label class="inline" for="times">
+            <strong>擲骰次數</strong>
+            <input type="number" class="input-small times" name="times" value="1" min="1" />
+          </label>
+          <span>　　　</span>
+          <label class="checkbox" for="isHide">
+            <input type="checkbox" class="isHide" name="isHide"> 暗骰
+          </label>
+        </p>
+        <p>
+          <label class="inline" for="saveName" title="選取已儲存之快擲資料，或將選好的擲骰設定儲存為快擲">
+            <strong>快擲名稱</strong>
+            <input type="text" class="input-xlarge saveName" name="saveName" />
+          </label>
+          <span>　　　</span>
+          <label class="checkbox" for="isSave">
+            <input type="checkbox" class="isSave" name="isSave"> 存為快擲
+          </label>
+        </p>
+      </div>
+      <div class="eachDice">
+        <p>
+          <label class="inline" for="name">
+            <strong>擲骰名稱</strong>
+            <input type="text" class="input-small name" name="name" />
+          </label>
+          <label class="inline" for="note">
+            <strong>　備註</strong>
+            <input type="text" class="input-large note" name="note" />
+          </label>
+          <label class="checkbox" for="addEach">
+            <input type="checkbox" class="addEach" name="addEach"> 個別加總
+          </label>
+        </p>
+        <p>
+          <label class="inline" for="amount">
+            <strong>骰數</strong>
+            <input type="number" class="input-mini amount" name="amount" value="1" />
+          </label>
+          <label class="inline" for="face">
+            <strong>&nbsp;&nbsp;骰面</strong>
+            <input type="number" class="input-mini face" name="face" value="20" />
+          </label>
+          <label class="inline" for="add">
+            <strong>&nbsp;&nbsp;加值</strong>
+            <input type="number" class="input-mini add" name="add" value="0" />
+          </label>
+          <label class="inline" for="extra">
+            <strong>&nbsp;&nbsp;額外調整</strong>
+            <input type="number" class="input-mini extra" name="extra" value="0" />
+          </label>
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary">擲骰</button>
+      <input type="reset" class="btn btn-reset" value="重設" />
+    </div>
+  {{/constant}}
+</template>

@@ -1,0 +1,26 @@
+
+<template name="main_explain">
+  {{> allApplyRoom}}
+  <h3>說明</h3>
+  <p>
+    <a href="javascript:" class="applyRoom">申請開團</a>
+  </p>
+  <a href="javascript:" class="dice">擲骰</a>
+</template>
+
+<template name="allApplyRoom">
+  {{#isolate}}
+    {{#if isAdm}}
+      <div class="apply">
+        <h3>申請中的團</h3>   
+          {{#each applying}}
+            <p>團名：{{name}}</p>
+            <p>申請者：{{getName adm}}</p>
+            <p>介紹：<br />{{{desc}}}</p>
+            <button class="btn btn-primary agree" data-id="{{_id}}">通過</button>
+            <button class="btn btn-info refuse" data-id="{{_id}}">否決</button>
+          {{/each}}
+      </div>
+    {{/if}}
+  {{/isolate}}
+</template>

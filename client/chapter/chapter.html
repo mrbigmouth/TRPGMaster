@@ -1,0 +1,106 @@
+<template name="main_chapter">
+  {{#if isLoading}}
+    載入中...
+  {{else}}
+    <div id="main_chapter">
+      <header>
+        <h1>{{#isolate}} {{title}} {{/isolate}}</h1>
+      </header>
+      <nav>
+        <ul class="breadcrumb">
+          {{#each allSection}}
+            <li><a href="#{{_id}}">{{#isolate}} {{name}} {{/isolate}}</a> <span class="divider">/</span></li>
+          {{/each}}
+            <li><a href="javascript:" class="addSection">新增一節</a></li>
+        </ul>
+      </nav>
+      {{#each allSection}}
+        {{#isolate}}
+          {{> chapter_section}}
+        {{/isolate}}
+      {{/each}}
+    </div>
+  {{/if}}
+</template>
+
+<template name="chapter_section">
+  <section id="{{_id}}">
+    <header>
+      <h2>
+        {{name}}
+        {{#if isAdm}}<i class="icon-pencil"></i>{{/if}}
+      </h2>
+    </header>
+    <div class="content" style="display:none;">
+      {{#each allParagraph}}
+        {{#isolate}}
+          {{> chapter_section_paragraph}}
+        {{/isolate}}
+      {{/each}}
+      <aside class="tool">
+        <a href="javascript:" class="outside" title="場外發言，並紀錄在本章節尾部">場外</a>
+        <a href="javascript:" class="wait" title="指示系統此章節正等待某位玩家或DM行動">等待</a>
+        <a href="javascript:" class="dice" title="進行擲骰，並紀錄在本章節尾部">擲骰</a>
+        {{#isolate}}
+          <a href="{{mapLink}}" class="map" title="查看與本章節有關的戰場地圖" target="_blank">地圖</a>
+        {{/isolate}}
+        <a href="#main_chapter">回到頁首</a>
+      </aside>
+      <aside class="outside">
+        {{> chapter_section_outside}}
+      </aside>
+    </div>
+    <hr />
+  </section>
+</template>
+
+<template name="chapter_section_paragraph">
+  <article data-id="{{_id}}">
+    <header class="tool">
+      <div class="notEditing">
+        <a href="javascript:" class="edit" title="編輯此段落">編輯</a>
+        {{#if _id}}
+          <a href="javascript:" class="addBefore" title="在此段落前新增段落">插入</a>
+          <a href="javascript:" class="addAfter" title="在此段落後新增段落">接續</a>
+        {{/if}}
+        <a href="javascript:" class="blur" title="隱藏此段落的額外資訊">隱藏資訊</a>
+      </div>
+      <div class="inEditing">
+        <a href="javascript:" class="submit">送出修改</a>
+        <a href="javascript:" class="cancel">取消修改</a>
+      </div>
+    </header>
+    <div class="paragraph">
+      <p>{{#if content}}{{{content}}}{{else}}本節目前無內容。{{/if}}</p>
+    </div>
+    {{#if time}}
+      <footer>
+        <time>本文最後由 {{getNick user}} 於 {{timeChinese time}} 編輯</time>
+      </footer>
+    {{/if}}
+  </article>
+</template>
+
+<template name="chapter_section_outside">
+  <ul>
+    {{#each allOutside}}
+      <li>
+        <span>{{timeChinese _id}}</span>
+        {{#if typeOutside}}
+          <span>{{getNick user}}：</span>
+          <span>{{msg}}</span>
+        {{/if}}
+        {{#if typeDice}}
+          {{#if result}}
+            {{#if isHide}}
+              <span class="badge badge-inverse">暗骰</span>
+            {{/if}}
+            <span>{{getNick user}}為{{who}}擲了一次{{name}}骰{{#if note}}（{{note}}）{{/if}} {{diceResult}}</span>
+          {{else}}
+            <span>擲骰結果載入中...</span>
+          {{/if}}
+        {{/if}}
+      </li>
+    {{/each}}
+  </ul>
+</template>

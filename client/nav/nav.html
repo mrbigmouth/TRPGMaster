@@ -1,0 +1,45 @@
+<template name="nav">
+  <div class="navbar-inner">
+    <a class="brand" href="/">TRPG Master 2.0</a>
+    <ul class="nav">
+      <li class="dropdown">
+        <a href="javascript:" class="dropdown-toggle" data-toggle="dropdown">
+          選擇房間
+          <b class="caret"></b>
+        </a>
+        <ul class="dropdown-menu">
+          {{>nav_roomLink}}
+        </ul>
+      </li>
+    </ul>
+    <i class="icon-chevron-up pull-right close" title="關閉導覽列"></i>
+    {{> nav_user}}
+  </div>
+</template>
+
+<template name="nav_roomLink">
+  {{#each allRooms}}
+    <li class="room dropdown">
+      <a href="/room/{{_id}}/" class="dropdown-toggle room">{{#isolate}} {{name}} {{/isolate}}</a>
+        <ul class="dropdown-menu">
+            <li><a href="/room/{{_id}}/">簡介與玩家</a></li>
+            <li><a href="/room/{{_id}}/doc/">資料區</a></li>
+          {{#each allChapters _id}}
+            <li>{{#isolate}} <a href="/room/{{room}}/{{_id}}/">{{name}}</a> {{/isolate}}</li>
+          {{/each}}
+        </ul>
+    </li>
+  {{/each}}
+</template>
+
+<template name="nav_user">
+  <div class="pull-right user">
+    {{#if currentUser}}
+      <span class="label label-success">使用者{{#isolate}} {{currentUser.profile.nick}} {{/isolate}}已登入</span>
+      <a href="javascript:" class="account">修改帳戶資訊</a>
+      　<a href="javascript:" class="logout">登出</a>
+    {{else}}
+      <a href="javascript:" class="login">點此登入</a>
+    {{/if}}
+  </div>
+</template>
