@@ -37,7 +37,14 @@ Template.main_chapter.events(
       }
   }
 )
-
+Template.main_chapter.rendered =
+    function() {
+      var hash = Session.get('hash');
+      if (hash) {
+        location.hash = Session.get('hash');
+        Session.set('hash');
+      }
+    }
 
 //section template
 Template.chapter_section.helpers(

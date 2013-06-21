@@ -38,7 +38,11 @@ Template.main_document.events(
 )
 Template.main_document.rendered =
     function() {
-      console.log(location.hash);
+      var hash = Session.get('hash');
+      if (hash) {
+        location.hash = Session.get('hash');
+        Session.set('hash');
+      }
     }
 
 //nav
