@@ -226,7 +226,7 @@ Template.chapter_section.events(
         }
       }
   //新增段落
-  ,'click div.tool a.addParagraph' :
+  ,'click aside a.addParagraph' :
       function(e, ins) {
         var room    = Session.get('room')._id
           , chapter = Session.get('chapter')._id

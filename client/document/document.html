@@ -9,10 +9,18 @@
         {{/if}}
       </h4>
       <ul class="nav" style="padding:0;">
-        {{> main_document_nav}}
+        {{#each rootDocument}}
+          {{#isolate}}
+            {{> main_document_nav}}
+          {{/isolate}}
+        {{/each}}
       </ul>
     </aside>
-    {{> main_document_detail}}
+    {{#each rootDocument}}
+      {{#isolate}}
+        {{> main_document_detail}}
+      {{/isolate}}
+    {{/each}}
   </div>
 </template>
 
@@ -31,7 +39,9 @@
     </a>
     <ul class="nav">
       {{#each children}}
-        {{> main_document_nav}}
+        {{#isolate}}
+          {{> main_document_nav}}
+        {{/isolate}}
       {{/each}}
     </ul>
   </li>
@@ -66,6 +76,8 @@
     <hr />
   </section>
   {{#each children}}
-    {{> main_document_detail}}
+    {{#isolate}}
+      {{> main_document_detail}}
+    {{/isolate}}
   {{/each}}
 </template>
