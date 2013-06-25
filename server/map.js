@@ -81,29 +81,62 @@ Meteor.publish('map_grid', function (roomID, mapID) {
 //繼承地圖
 Meteor.methods(
   {'ExtendMap' :
-      function(mapID) {
-        var map    = DB.map.findOne(mapID)
-          , userID = this.userId
+      function(mapID, sectionID) {
+        var userID = this.userId
+          , map
           , room
+          , section
           ;
-
-        if (! map) {
-          throw new Meteor.Error(404, '錯誤的參數!', '錯誤的參數!');
+        if (mapID !== null) {
+          map = DB.map.findOne(mapID);
+          if (! map) {
+            throw new Meteor.Error(404, '查無地圖!', '查無地圖!');
+          }
+          room = DB.room.findOne(map.room);
+          if (! room || room.adm.indexOf(userID) === -1) {
+            throw new Meteor.Error(401, '權限不足!', '權限不足!');
+          }
+          map._id = (Date.now() + '');
+          map.round += 1;
+          DB.map.insert(map, function() {
+            DB.map_grid.find({'map' : mapID}).forEach(function(grid) {
+              grid._id = grid.x + ',' + grid.y + '@' + map.round + '@' + map._id;
+              grid.round = map.round;
+              grid.map = map._id;
+              DB.map_grid.insert(grid, _.identity);
+            });
+          });
         }
-        room = DB.room.findOne(map.room);
-        if (! room || room.adm.indexOf(userID) !== -1) {
-          this.error(new Meteor.Error(401, '權限不足!', '權限不足!'));
+        else if (sectionID !== null) {
+          section = DB.record.findOne(sectionID);
+          if (! section) {
+            throw new Meteor.Error(404, '查無章節!', '查無章節!');
+          }
+          room = DB.room.findOne(section.room);
+          console.log(room.adm, userID);
+          if (! room || room.adm.indexOf(userID) === -1) {
+            throw new Meteor.Error(401, '權限不足!', '權限不足!');
+          }
+          map =
+              {'_id'     : (Date.now() + '')
+              ,'room'    : section.room
+              ,'chapter' : section.chapter
+              ,'section' : section._id
+              ,'name'    : '「' + section.name + '」戰場地圖'
+              ,'sizeX'   : 10
+              ,'sizeY'   : 10
+              ,'light'   : 100
+              ,'round'   : 1
+              ,'affect'  : []
+              ,'land'    : []
+              ,'unit'    : []
+              };
+          DB.map.insert(map, _.identity);
+        }
+        else {
+          throw new Meteor.Error(404, '必須有參數!', '必須有參數!');
         }
 
-        map._id = (Date.now() + '');
-        map.round += 1;
-        DB.map.insert(map);
-        DB.map_grid.find({'map' : mapID}).forEach(function(grid) {
-          grid._id = grid.x + ',' + grid.y + '@' + map.round + '@' + map._id;
-          grid.round = map.round;
-          grid.map = map._id;
-          DB.map_grid.insert(grid);
-        });
         return map._id;
       }
   }

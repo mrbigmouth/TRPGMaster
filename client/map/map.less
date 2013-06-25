@@ -1,0 +1,121 @@
+@import "../lib/bootstrap/variables.lessimport";
+
+#map_info {
+  header {
+    background: @wellBackground;
+    cursor: pointer;
+    font-weight: bold;
+    padding: 5px;
+  }
+  div.content {
+    p {
+      margin: 3px;
+    }
+    input.number {
+      width: 40px;
+      margin: 0;
+    }
+    input.button {
+      margin: 0;
+      padding: 1px;
+    }
+    input.text {
+      margin: 0;
+      width: 150px;
+    }
+    input.texts {
+      margin:0;
+      width:30px;
+    }
+    textarea.textarea {
+      width: 95%;
+      height: 60px;
+      display: block;
+      margin: 0 auto 0 auto;
+      resize: none;
+    }
+    span.ColorPickerGrid {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      vertical-align: middle;
+      cursor: pointer;
+      border: 1px solid #000000;
+    }
+  }
+}
+
+#map_wrapper {
+  padding: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+  position: relative;
+}
+
+#point_pos {
+  position: absolute;
+  background: @wellBackground;
+  padding: 5px 0 5px 0;
+  min-width: 140px;
+  text-align: center;
+}
+
+#map_table {
+  margin: 40px 20px 20px 20px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border-spacing: 0;
+  border: @tableBorder solid 1px;
+
+  th {
+    text-align: center;
+    font-weight: bold;
+    border: @tableBorder solid 1px;
+    vertical-align: middle;
+  }
+
+  td {
+    border: @hrBorder 1px dotted;
+    text-align: center; 
+    vertical-align: middle;
+
+    img {
+      width: 20px;
+      height: 20px;
+    }
+
+    div.content {
+      position: relative;
+      height: 100%;
+      z-index: 1;
+      border-style: solid;
+      cursor: help;
+
+      span {
+        cursor: inherit;
+      }
+    }
+
+    div.dark, div.mist {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    div.dark {
+      background: #000000;
+      z-index: 11;
+      opacity: 0;
+    }
+    div.mist {
+      opacity:0.1
+    }
+  }
+
+  td.dragIn {
+    background-color:#8080ff;
+  }
+
+}

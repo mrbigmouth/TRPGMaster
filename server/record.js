@@ -4,7 +4,8 @@ DB.record.allow(
         var result = false
           , room
           ;
-        doc._id = doc.time = (Date.now() + '');
+        doc.time = Date.now();
+        doc._id = (doc.time + '');
         doc.user = userID;
         if (userID === TRPG.adm || doc.room === TRPG.public._id) {
           result = true;
@@ -80,7 +81,9 @@ DB.record.allow(
       }
   ,'remove' :
       function(userID, doc) {
-        var result = false;
+        var result = false
+          , now    = Date.now()
+          ;
         if (userID === TRPG.adm || userID == doc.user) {
           result = true;
         }

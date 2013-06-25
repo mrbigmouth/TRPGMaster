@@ -11,7 +11,6 @@ Template.message.helpers(
 //改變訊息列篩選條件
 var MsgDep        = new Deps.Dependency()
   , MsgFilter     = {}
-  , MsgCursor
   , changeFilter
   ;
 changeFilter =
@@ -23,17 +22,20 @@ changeFilter =
     }
 Deps.autorun(function() {
   MsgDep.depend();
-  MsgCursor = DB.message.find( MsgFilter, {'sort' : {'_id' : 1}, 'limit' : 50} );
   //有新訊息時打開訊息列
-  var $body = $('body');
-  DB.message.find(MsgFilter).observeChanges(
+  var layout = $('body');
+  layout = layout.data('layout');
+  if (! layout || typeof layout.open !== 'function') {
+    return true;
+  }
+  DB.message_recent.find(MsgFilter).observeChanges(
     {'added' :
         function() {
           switch (Meteor.Router.page()) {
           case 'main_map':
             break;
           default        :
-            $body.data('layout') && $body.data('layout').open('south');
+            layout.open('south');
             break;
           }
         }
@@ -70,7 +72,8 @@ Template.message_list.helpers(
   {'allMsgs'     :
       function () {
         MsgDep.depend();
-        return MsgCursor;
+        return DB.message_recent.find( MsgFilter, {'sort' : {'time' : 1} } ).fetch().slice(-50);
+//        return MsgCursor;//.fetch().slice(-50);
       }
   //時間中文化
   ,'timeChinese' : TOOL.convertTimeToChinese
@@ -171,7 +174,7 @@ var toChat =
       else {
         data.room = TRPG.public._id;
       }
-      DB.message.insert(data);
+      DB.message_all.insert(data);
       $msg.val('');
     }
 Template.message_chat.events(

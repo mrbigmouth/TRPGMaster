@@ -345,7 +345,7 @@ Template.dice_form.events(
           if (isSave) {
             dices[ d.name ] = _.pick(d, 'addEach', 'amount', 'face', 'add', 'extra');
           }
-          DB.message.insert(d);
+          DB.message_all.insert(d);
         });
         if (isSave) {
           saveName = $input.filter('.saveName').val();

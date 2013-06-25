@@ -39,12 +39,13 @@ Template.main_chapter.events(
 )
 Template.main_chapter.rendered =
     function() {
-      var hash = Session.get('hash');
-      if (hash) {
-        location.hash = Session.get('hash');
+      var hash  = Session.get('hash');
+      if (hash && $(hash).length > 0) {
+        _.delay(function() { location.hash = hash }, 50);
         Session.set('hash');
       }
     }
+
 
 //section template
 Template.chapter_section.helpers(
@@ -102,15 +103,13 @@ Template.chapter_section.events(
           if ($section.find('article.editing').length > 0) {
             return false;
           }
-          if (SCRIBE.paragraph[ section ]) {
-            SCRIBE.paragraph[ section ].stop();
-            delete SCRIBE.paragraph[ section ];
-          }
           $section.children('div.content').hide();
           ins.opened = false;
         }
         else {
-          SCRIBE.paragraph[ section ] = Meteor.subscribe('paragraph', room, chapter, section);
+          if (! SCRIBE.paragraph[ section ]) {
+            SCRIBE.paragraph[ section ] = Meteor.subscribe('paragraph', room, chapter, section);
+          }
           $section.children('div.content').show();
           ins.opened = true;
         }
@@ -136,7 +135,7 @@ Template.chapter_section.events(
         e.stopPropagation();
         msg = window.prompt('請輸入場外發言：');
         if (msg) {
-          DB.message.insert(
+          DB.message_all.insert(
             {'user'    : Meteor.userId()
             ,'room'    : insData.room
             ,'chapter' : insData.chapter
@@ -178,7 +177,7 @@ Template.chapter_section.events(
           
           msgs.unshift('請選擇繼承地圖或開新地圖：', '0)不繼承舊地圖，開新地圖');
           msgs = msgs.join('\r\n');
-          choice = window.prompt(msgs);
+          choice = window.prompt(msgs, 0);
           if (choice !== null && ! isNaN(choice)) {
             choice = parseInt(choice, 10) - 1;
             if (choice !== 0 && (data = maps[ choice ])) {
@@ -187,37 +186,29 @@ Template.chapter_section.events(
                   console.log(err);
                 }
                 else {
-                  $link
-                    .attr('href', '/map/' + section.room + '/' + mapID + '/')
-                    .trigger('click');
+                  var href = '/map/' + section.room + '/' + mapID + '/';
+                  $link.attr('href', href);
+                  window.open(href, 'map');
                 }
               });
             }
             else {
-              DB.map.insert(
-                {'room'    : section.room
-                ,'chapter' : section.chapter
-                ,'section' : section._id
-                ,'name'    : '「' + section.name + '」戰場地圖'
-                ,'sizeX'   : 10
-                ,'sizeY'   : 10
-                ,'light'   : 100
-                ,'round'   : 1
-                ,'affect'  : []
-                ,'land'    : []
-                ,'unit'    : []
-                }
+              Meteor.apply(
+                'ExtendMap'
+              , [ null
+                , section._id
+                ]
               , function(err, mapID) {
                   if (err) {
                     console.log(err);
                   }
                   else {
-                    $link
-                      .attr('href', '/map/' + section.room + '/' + mapID + '/')
-                      .trigger('click');
+                    var href = '/map/' + section.room + '/' + mapID + '/';
+                    $link.attr('href', href);
+                    window.open(href, 'map');
                   }
                 }
-              )
+              );
             }
           }
         }
@@ -241,7 +232,7 @@ Template.chapter_section.events(
           ,'sort'    : sort
           ,'content' : ''
           }
-        );        
+        );
       }
   }
 )
@@ -258,13 +249,15 @@ Template.chapter_section.created =
       //三天內有更新者自動進行訂閱
       else if (Date.now() - data.time <= 259200000) {
         this.opened = true;
-        SCRIBE.paragraph[ data._id ] =
-          Meteor
-            .subscribe( 'paragraph'
-                      , data.room
-                      , data.chapter
-                      , data._id
-                      );
+        if (! SCRIBE.paragraph[ data._id ]) {
+          SCRIBE.paragraph[ data._id ] =
+            Meteor
+              .subscribe( 'paragraph'
+                        , data.room
+                        , data.chapter
+                        , data._id
+                        );
+        }
       }
     }
 //自動展開
@@ -411,7 +404,7 @@ Template.chapter_section_paragraph.events(
           });
         }
         //更新紀錄
-        DB.message.insert(
+        DB.message_all.insert(
           {'user'    : userID
           ,'room'    : room
           ,'chapter' : chapter
@@ -439,7 +432,7 @@ Template.chapter_section_paragraph.rendered =
 Template.chapter_section_outside.helpers(
   {'allOutside'  :
       function() {
-        return DB.message.find({'section' : this._id, 'type' : {'$in' : ['outside', 'dice']}},{'sort' : {'_id' : 1}});
+        return DB.message_recent.find({'section' : this._id, 'type' : {'$in' : ['outside', 'dice']}},{'sort' : {'_id' : 1}});
       }
   ,'timeChinese' : TOOL.convertTimeToChinese
   ,'getNick'     : TOOL.getUserNick

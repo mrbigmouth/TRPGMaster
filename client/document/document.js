@@ -38,9 +38,9 @@ Template.main_document.events(
 )
 Template.main_document.rendered =
     function() {
-      var hash = Session.get('hash');
-      if (hash) {
-        location.hash = Session.get('hash');
+      var hash  = Session.get('hash');
+      if (hash && $(hash).length > 0) {
+        _.delay(function() { location.hash = hash; }, 50);
         Session.set('hash');
       }
     }

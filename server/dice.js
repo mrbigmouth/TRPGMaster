@@ -1,4 +1,4 @@
-DB.message.deny(
+DB.message_all.deny(
   {'insert' :
       function(userID, doc) {
         if (doc.type === 'dice') {

@@ -7,7 +7,7 @@ DB.document.allow(
         doc.user = userID;
         if (userID === TRPG.adm || doc.room === TRPG.public._id || (room.status !== 0 && room.adm && room.adm.indexOf(userID) !== -1)) {
           DB.room.update(room._id, {'$set' : {'time' : doc.time } });
-          DB.message.insert(
+          DB.message_all.insert(
             {'_id'  : doc._id
             ,'type' : 'room'
             ,'user' : doc.user
@@ -34,7 +34,7 @@ DB.document.allow(
             DB.document.update(doc._id, {'$set' : {'time' : now } });
           }
           DB.room.update(room._id, {'$set' : {'time' : now } });
-          DB.message.insert(
+          DB.message_all.insert(
             {'_id'  : (now + '')
             ,'type' : 'room'
             ,'user' : userID
@@ -52,7 +52,7 @@ DB.document.allow(
         if (userID === TRPG.adm || userID === doc.user || (room.status !== 0 && room.adm && room.adm.indexOf(userID) !== -1)) {
           var now = Date.now();
           DB.room.update(room._id, {'$set' : {'time' : now } });
-          DB.message.insert(
+          DB.message_all.insert(
             {'_id'  : (Date.now() + '')
             ,'type' : 'room'
             ,'user' : userID

@@ -1,12 +1,71 @@
 <template name="main_map">
-  test
-  <div id="main_map">
-    <div class="ui-layout-center" id="map_wrapper">
-      abc
-      <table id="map"></table>
+  {{> map_wrapper}}
+  {{> map_info}}
+</template>
+
+<template name="map_wrapper">
+  <div class="ui-layout-center" id="map_wrapper">
+    <div id="point_pos" style="left: 0; top: 0;">
+      指標位置：(<span class="x">?</span>,<span class="y">?</span>)
     </div>
-    <div class="ui-layout-west" id="map_info">
-      info
-    </div>
+    {{> map_table}}
   </div>
+</template>
+
+<template name="map_info">
+  <form action="javascript:" class="ui-layout-west form-inline" id="map_info">
+    <section>
+      <header>
+        檢視設定
+      </header>
+      <div class="content" style="display:none;">
+        <p class="grid_size">
+          地圖方格大小：
+          <input type="number" class="number grid_size" name="grid_size" min="20" step="1" />
+        </p>
+        <p class="unit_size">
+          單位標誌大小：
+          <input type="number" class="number unit_size" name="unit_size" min="20" step="1" />
+        </p>
+        <p class="change_view">
+          切換視角：
+          <select class="change_view"></select>
+        </p>
+      </div>
+    </section>
+  </form>
+</template>
+
+<template name="map_table">
+{{#if loaded}}
+  <table id="map_table">
+    <thead>
+      <th>Y\X</th>
+      {{#each sizeX}}
+        <th>{{this}}</th>
+      {{/each}}
+      <th>X/Y</th>
+    </thead>
+    <tbody>
+      {{#each sizeY}}
+        <tr>
+          <th>{{this}}</th>
+          {{#each GridsRow this}}
+            {{#isolate}}
+              <td data-x="{{x}}" data-y="{{y}}" data-pos="{{x}},{{x}}">{{x}},{{y}}</td>
+            {{/isolate}}
+          {{/each}}
+          <th>{{this}}</th>
+        </tr>
+      {{/each}}
+    </tbody>
+    <tfoot>
+      <th>Y/X</th>
+      {{#each sizeX}}
+        <th>{{this}}</th>
+      {{/each}}
+      <th>X\Y</th>
+    </tfoot>
+  </table>
+{{/if}}
 </template>

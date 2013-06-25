@@ -63,6 +63,7 @@ RouterRun =
         Session.set('room', DB.room.findOne(RouterParams.room));
         Session.set('chapter', DB.record.findOne(RouterParams.chapter));
         SCRIBE.section = Meteor.subscribe('section', RouterParams.room, RouterParams.chapter);
+        /*
         if (RouterParams.section && SCRIBE.paragraph[ RouterParams.section ] === undefined) {
           SCRIBE.paragraph[ RouterParams.section ] =
               Meteor
@@ -72,6 +73,7 @@ RouterRun =
                           , RouterParams.section
                           );
         }
+        */
         //訂閱地圖
         SCRIBE.map = Meteor.subscribe('map', RouterParams.chapter);
         break;
@@ -103,7 +105,9 @@ Meteor.Router.add(
       {'to'  : 'main_document'
       ,'and' :
           function(rid) {
-            Session.set('hash', location.hash);
+            if (! Session.get('hash')) {
+              Session.set('hash', location.hash);
+            }
             RouterParams = {'room' : rid};
             RouterRun.invalidate();
           }
@@ -112,12 +116,13 @@ Meteor.Router.add(
       {'to'  : 'main_chapter'
       ,'and' :
           function(rid, cid) {
-            var hash = location.hash;
-            Session.set('hash', hash);
+            if (! Session.get('hash')) {
+              Session.set('hash', location.hash);
+            }
             RouterParams =
                 {'room'    : rid
                 ,'chapter' : cid
-                ,'section' : hash.replace('#', '')
+                ,'section' : Session.get('hash').replace('#', '')
                 }
             RouterRun.invalidate();
           }
