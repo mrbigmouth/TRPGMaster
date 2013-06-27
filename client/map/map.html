@@ -1,6 +1,7 @@
 <template name="main_map">
   {{> map_wrapper}}
   {{> map_info}}
+  {{> map_editForm}}
 </template>
 
 <template name="map_wrapper">
@@ -12,8 +13,30 @@
   </div>
 </template>
 
+<template name="map_editForm">
+  <form action="javascript:" id="map_editForm">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+      <h4>地圖物件編輯器</h4>
+    </div>
+    <div class="modal-body">
+      {{#each editing}}
+      {{/each}}
+    </div>
+  </form>
+</template>
+
 <template name="map_info">
   <form action="javascript:" class="ui-layout-west form-inline" id="map_info">
+    <div>
+      {{#if prevRound}}
+        <a href="/map/{{roomID}}/{{mapID}}/{{prevRound}}/" class="pull-left">上一輪</a>
+      {{/if}}
+      當前回合：{{nowRound}}
+      {{#if vextRound}}
+        <a href="/map/{{roomID}}/{{mapID}}/{{nextRound}}/" class="pull-right">下一輪</a>
+      {{/if}}
+    </div>
     <section>
       <header>
         檢視設定
@@ -33,6 +56,100 @@
         </p>
       </div>
     </section>
+    {{#isolate}}
+      <section>
+        <header>
+          效應資訊
+          {{#if isAdm}}
+            <a href="javascript:" class="pull-right" data-fn="add" data-type="affect" title="新增效應">新增</a>
+            <a href="javascript:" class="pull-right" data-fn="editAll" data-type="affect" title="編輯全部效應">編輯全部</a>
+            <a href="javascript:" class="pull-right" data-fn="edit" data-type="affect" title="編輯已展開的效應">編輯所選</a>
+          {{/if}}
+        </header>
+        <div class="content" style="display:none;">
+          {{#if hasAffect}}
+            {{#each allAffect}}
+              {{#isolate}}
+                <section data-id="{{_id}}">
+                  <header>
+                    {{name}}
+                  </header>
+                  <div class="content" style="display:none;">
+                    效應中止回合：{{round}}
+                    <br />
+                    {{{showDesc}}}
+                    {{#if isAdm}}
+                      <br />
+                      {{{hideDesc}}}
+                    {{/if}}
+                  </div>
+                </section>
+              {{/isolate}}
+            {{/each}}
+          {{else}}
+            目前沒有任何資料！
+          {{/if}}
+        </div>
+      </section>
+    {{/isolate}}
+    {{#isolate}}
+      <section>
+        <header>
+          地型資訊
+          {{#if isAdm}}
+            <a href="javascript:" class="pull-right" data-fn="add" data-type="land" title="新增地型">新增</a>
+            <a href="javascript:" class="pull-right" data-fn="editAll" data-type="land" title="編輯全部地型">編輯全部</a>
+            <a href="javascript:" class="pull-right" data-fn="edit" data-type="land" title="編輯已展開的地型">編輯所選</a>
+          {{/if}}
+        </header>
+        <div class="content" style="display:none;">
+          {{#if hasAffect}}
+            {{#each allAffect}}
+              {{#isolate}}
+                <section data-id="{{_id}}">
+                  <header>
+                    {{name}}
+                  </header>
+                  <div class="content" style="display:none;">
+                  </div>
+                </section>
+              {{/isolate}}
+            {{/each}}
+          {{else}}
+            目前沒有任何資料！
+          {{/if}}
+        </div>
+      </section>
+    {{/isolate}}
+    {{#isolate}}
+      <section>
+        <header>
+          單位資訊
+          {{#if isAdm}}
+            <a href="javascript:" class="pull-right" data-fn="add" data-type="unit" title="新增單位">新增</a>
+            <a href="javascript:" class="pull-right" data-fn="editAll" data-type="unit" title="編輯全部單位">編輯全部</a>
+            <a href="javascript:" class="pull-right" data-fn="edit" data-type="unit" title="編輯已展開的單位">編輯所選</a>
+          {{/if}}
+        </header>
+        <div class="content" style="display:none;">
+          {{#if hasAffect}}
+            {{#each allAffect}}
+              {{#isolate}}
+                <section data-id="{{_id}}">
+                  <header>
+                    {{name}}
+                  </header>
+                  <div class="content" style="display:none;">
+                  </div>
+                </section>
+              {{/isolate}}
+            {{/each}}
+          {{else}}
+            目前沒有任何資料！
+          {{/if}}
+        </div>
+      </section>
+    {{/isolate}}
   </form>
 </template>
 

@@ -28,7 +28,7 @@ SCRIBE =
     //起始未訂閱:某一特定chapter的所有地圖資料
     ,'map'           : false
     //起始未訂閱:某一特定map的所有格子資料
-    ,'map_grid'      : false
+    ,'map_detail'    : false
     }
 
 
@@ -78,15 +78,28 @@ RouterRun =
         SCRIBE.map = Meteor.subscribe('map', RouterParams.chapter);
         break;
       case 'main_character' :
-        SCRIBE.character = Meteor.subscribe('character', RouterParams.character);
-        var character = DB.character.findOne(RouterParams.character);
-        Session.set('character', character);
-        Session.set('room', character && DB.room.findOne(character.room));
+        SCRIBE.character =
+          Meteor.subscribe(
+            'character'
+          , RouterParams.character
+          , function() {
+              var character = DB.character.findOne(RouterParams.character);
+              Session.set('character', character);
+              Session.set('room', character && DB.room.findOne(character.room));
+            }
+          );
         break;
       case 'main_map' :
-        SCRIBE.map_grid = Meteor.subscribe('map_grid', RouterParams.room, RouterParams.map);
-        Session.set('map', DB.map.findOne(RouterParams.map));
-        Session.set('room', DB.room.findOne(RouterParams.room));
+        SCRIBE.map_detail =
+          Meteor.subscribe(
+            'map_detail'
+          , RouterParams.room
+          , RouterParams.map
+          , function() {
+              Session.set('map', DB.map.findOne(RouterParams.map));
+              Session.set('room', DB.room.findOne(RouterParams.room));
+            }
+          );
         break;
       }
     });

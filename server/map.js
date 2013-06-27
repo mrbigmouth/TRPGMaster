@@ -17,7 +17,7 @@ DB.map.allow(
         }
         if (result) {
           if (doc.section) {
-            DB.record.update(doc.section, {'$set' : {'time' : doc._id } });
+            DB.record.update(doc.section, {'$set' : {'time' : Date.now() } });
           }
           return true;
         }
@@ -63,7 +63,176 @@ Meteor.publish('map', function (chapterID) {
   return DB.map.find({'chapter' : chapterID});
 });
 
-Meteor.publish('map_grid', function (roomID, mapID) {
+DB.map_grid.allow(
+  {'insert' :
+      function(userID, doc) {
+        var result = false
+          , map
+          , room
+          ;
+
+        if (userID === TRPG.adm) {
+          result = true;
+        }
+        else {
+          map = DB.map.findOne(doc.map);
+          room = DB.room.findOne(map.room);
+          if (map && room && (room._id === TRPG.public._id  || room.adm.indexOf(userID) !== -1) ) {
+            result = true;
+          }
+        }
+        if (result) {
+          if (map.section) {
+            DB.record.update(map.section, {'$set' : {'time' : Date.now() } });
+          }
+          return true;
+        }
+        else {
+          return false;
+        }
+      }
+  ,'update' :
+      function(userID, doc) {
+        var result = false
+          , map
+          , room
+          ;
+
+        if (userID === TRPG.adm) {
+          result = true;
+        }
+        else {
+          map = DB.map.findOne(doc.map);
+          room = DB.room.findOne(map.room);
+          if (map && room && (room._id === TRPG.public._id  || room.adm.indexOf(userID) !== -1) ) {
+            result = true;
+          }
+        }
+        if (result) {
+          if (map.section) {
+            DB.record.update(map.section, {'$set' : {'time' : Date.now() } });
+          }
+          return true;
+        }
+        else {
+          return false;
+        }
+      }
+  ,'remove' :
+      function(userID, doc) {
+        var result = false
+          , map
+          , room
+          ;
+
+        if (userID === TRPG.adm) {
+          result = true;
+        }
+        else {
+          map = DB.map.findOne(doc.map);
+          room = DB.room.findOne(map.room);
+          if (map && room && (room._id === TRPG.public._id  || room.adm.indexOf(userID) !== -1) ) {
+            result = true;
+          }
+        }
+        if (result) {
+          if (map.section) {
+            DB.record.update(map.section, {'$set' : {'time' : Date.now() } });
+          }
+          return true;
+        }
+        else {
+          return false;
+        }
+      }
+  }
+)
+DB.map_detail.allow(
+  {'insert' :
+      function(userID, doc) {
+        var result = false
+          , map
+          , room
+          ;
+
+        if (userID === TRPG.adm) {
+          result = true;
+        }
+        else {
+          map = DB.map.findOne(doc.map);
+          room = DB.room.findOne(map.room);
+          if (map && room && (room._id === TRPG.public._id  || room.adm.indexOf(userID) !== -1) ) {
+            result = true;
+          }
+        }
+        if (result) {
+          if (map.section) {
+            DB.record.update(map.section, {'$set' : {'time' : Date.now() } });
+          }
+          return true;
+        }
+        else {
+          return false;
+        }
+      }
+  ,'update' :
+      function(userID, doc) {
+        var result = false
+          , map
+          , room
+          ;
+
+        if (userID === TRPG.adm) {
+          result = true;
+        }
+        else {
+          map = DB.map.findOne(doc.map);
+          room = DB.room.findOne(map.room);
+          if (map && room && (room._id === TRPG.public._id  || room.adm.indexOf(userID) !== -1) ) {
+            result = true;
+          }
+        }
+        if (result) {
+          if (map.section) {
+            DB.record.update(map.section, {'$set' : {'time' : Date.now() } });
+          }
+          return true;
+        }
+        else {
+          return false;
+        }
+      }
+  ,'remove' :
+      function(userID, doc) {
+        var result = false
+          , map
+          , room
+          ;
+
+        if (userID === TRPG.adm) {
+          result = true;
+        }
+        else {
+          map = DB.map.findOne(doc.map);
+          room = DB.room.findOne(map.room);
+          if (map && room && (room._id === TRPG.public._id  || room.adm.indexOf(userID) !== -1) ) {
+            result = true;
+          }
+        }
+        if (result) {
+          if (map.section) {
+            DB.record.update(map.section, {'$set' : {'time' : Date.now() } });
+          }
+          return true;
+        }
+        else {
+          return false;
+        }
+      }
+  }
+)
+
+Meteor.publish('map_detail', function (roomID, mapID) {
   var userID = this.userID
     , room   = DB.room.findOne(roomID)
     , map    = DB.map.findOne(mapID)
@@ -75,7 +244,9 @@ Meteor.publish('map_grid', function (roomID, mapID) {
     this.error(new Meteor.Error(401, '權限不足!', '權限不足!'));
   }
   return [ DB.map.find(mapID)
-         , DB.map_grid.find({'map' : mapID})];
+         , DB.map_grid.find({'map' : mapID})
+         , DB.map_detail.find({'map' : mapID})
+         ];
 });
 
 //繼承地圖
@@ -127,9 +298,6 @@ Meteor.methods(
               ,'sizeY'   : 10
               ,'light'   : 100
               ,'round'   : 1
-              ,'affect'  : []
-              ,'land'    : []
-              ,'unit'    : []
               };
           DB.map.insert(map, _.identity);
         }

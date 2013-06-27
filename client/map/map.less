@@ -1,11 +1,23 @@
 @import "../lib/bootstrap/variables.lessimport";
 
 #map_info {
-  header {
-    background: @wellBackground;
-    cursor: pointer;
-    font-weight: bold;
-    padding: 5px;
+  section {
+    header {
+      background: darken(@wellBackground, 30%);
+      cursor: pointer;
+      font-weight: bold;
+      padding: 5px;
+    }
+
+    section {
+      header {
+        background: @wellBackground;
+      }
+    }
+
+    a {
+      margin : 3px;
+    }
   }
   div.content {
     p {
@@ -78,11 +90,6 @@
     border: @hrBorder 1px dotted;
     text-align: center; 
     vertical-align: middle;
-
-    img {
-      width: 20px;
-      height: 20px;
-    }
 
     div.content {
       position: relative;

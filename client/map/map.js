@@ -17,24 +17,210 @@ Template.map_wrapper.events(
   }
 )
 
+//mapEditform
+var $form        = $($.parseHTML('<div />'))
+  , callEditForm =
+      function(ids) {
+
+      }
+  ;
+
+Template.map_editForm.rendered =
+    function() {
+      //只執行一次
+      if (this.firstNode && ! this.inited) {
+        $form = $('#map_editForm');
+        this.inited = true;
+      }
+    }
+
+//map_info
+Template.map_info.helpers(
+  {'isAdm'        : TOOL.userIsAdm
+  ,'prevRound'    :
+      function() {
+        if (! Session.get('map')) {
+          return false;
+        }
+        return Session.get('map').prev;
+      }
+  ,'nowRound'     :
+      function() {
+        if (! Session.get('map')) {
+          return 0;
+        }
+        return Session.get('map').round;
+      }
+  ,'nextRound'    :
+      function() {
+        var round;
+        if (! Session.get('map')) {
+          return false;
+        }
+        return Session.get('map').next;
+      }
+  ,'hasAffect'    :
+      function() {
+        if (! Session.get('map')) {
+          return false;
+        }
+        return (DB.map_detail.find(
+                  {'map'   : Session.get('map')._id
+                  ,'type'  : 'affect'
+                  ,'round' :
+                      {'lte' : Session.get('map').round
+                      }
+                  }
+                ).count() > 0);
+      }
+  ,'allAffect'    :
+      function() {
+        return DB.map_detail.find(
+          {'map'   : Session.get('map')._id
+          ,'type'  : 'affect'
+          ,'round' :
+              {'lte' : Session.get('map').round
+              }
+          }
+        , {'sort' :
+            {'sort'  : 1}
+          }
+        );
+      }
+  }
+)
 Template.map_info.events(
   {'click header' :
       function(e) {
-        $(e.currentTarget).closest('section').children('div.content').slideToggle();
+        $(e.currentTarget).closest('section').children('div.content').slideToggle('fast');
+      }
+  ,'click header a' :
+      function(e) {
+        e.stopPropagation();
+
+        var $this = $(e.currentTarget)
+          , ids   = []
+          , data
+          ;
+
+        switch ($this.attr('data-fn')) {
+        case 'add':
+          data =
+            {'map'   : Session.get('map')._id
+            ,'round' : Session.get('map').round
+            }
+          switch ($this.attr('data-type')) {
+          case 'affect':
+            data.type   = 'affect';
+            data.name   = '未命名效應';
+            data.round  = 0;
+            data.desc   = '';
+            data.hide   = '';
+            data.affect = [];
+            break;
+          case 'land':
+            data.type  = 'land';
+            data.name  = '未命名地型';
+            data.show  = 'land';
+            data.color = '#FFFFFF';
+            data.desc  = '';
+            data.hide  = '';
+            data.light = 0;
+            data.shadow = 0;
+            data.minusView = 0;
+            data.isHideTo = [];
+            break;
+          case 'unit':
+            data.type = 'unit';
+            data.name = '未命名單位';
+            data.token = '？';
+            data.desc  = '';
+            data.hide  = '';
+            data.character = false;
+            data.maxhp = 10;
+            data.hp = 10;
+            data.light = 0;
+            data.shadow = 0;
+            data.minusView = 0;
+            data.sightNormal = 20;
+            data.sightLowLight = 0;
+            data.sightDark = 0;
+            data.sightBlind = 0;
+            data.hiddenTo = [];
+            data.isPublicView = false;
+            break;
+          }
+          Meteor.call('getTime', function(now) {
+            data._id = (now + '');
+            DB.map_detail.insert(data);
+            callEditForm([ data._id ]);
+          });
+          break;
+        case 'editAll':
+          $this.closest('section').find('section[data-id]').each(function() {
+            ids.push( $(this).attr('data-id') );
+          });
+          callEditForm(ids);
+          break;
+        case 'edit':
+          $this.closest('section').find('div.content:visible').each(function() {
+            var id = $(this).parent().attr('data-id');
+            if (id) {
+              ids.push(id);
+            }
+          });
+          callEditForm(ids);
+          break;
+        }
+      }
+  //view
+  ,'change input.grid_size' :
+      function(e) {
+        var size = e.currentTarget.value;
+        $.rule('#map_table th,#map td', 'style').css({'min-width' : size + 'px', 'height' : size + 'px'});
+      }
+  ,'change input.unit_size' :
+      function(e) {
+        var size = e.currentTarget.value;
+        $.rule('#map_table th, #map_table td', 'style').css('font-size', size + 'px');
+        $.rule('#map_table td img', 'style').css({'width' : size + 'px', 'height' : size + 'px;'});
       }
   }
 )
 Template.map_info.rendered =
     function() {
+      //只執行一次
       if (this.firstNode && ! this.inited) {
-        var gridSize, unitSize;
+        var form = this.firstNode
+          , grid = form.grid_size
+          , unit = form.unit_size
+          , gridSize
+          , unitSize
+          ;
+        //只執行一次
         this.inited = true;
-        if (STORE('map_gridView')) {
-
+        if (STORE('map_gridSize')) {
+          gridSize = STORE('map_gridSize');
+          grid.value = gridSize;
         }
         else {
-
+          gridSize = '30';
+          STORE('map_gridSize', gridSize);
+          grid.value = gridSize;
         }
+        if (STORE('map_unitSize')) {
+          unitSize = STORE('map_unitSize');
+          unit.value = unitSize;
+        }
+        else {
+          unitSize = '22';
+          STORE('map_unitSize', unitSize);
+          unit.value = unitSize;
+        }
+
+        $.rule('#map_table th,#map td {min-width:' + gridSize +'px;height:' + gridSize +'px;}').appendTo('style');
+        $.rule('#map_table th, #map_table td {font-size:' + unitSize + 'px;}').appendTo('style');
+        $.rule('#map_table td img {width:' + unitSize + 'px;height:' + unitSize + 'px;}').appendTo('style');
       }
     }
 
