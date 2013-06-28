@@ -54,23 +54,26 @@ Template.chapter_section.helpers(
         var room    = this.room
           , chapter = this.chapter
           , section = this._id
+          , cursor  = DB.record.find({'room' : room, 'chapter' : chapter, 'section' : section })
+          , count   = cursor.count()
           , result
           ;
+
         if (! SCRIBE.paragraph[ section ] || ! SCRIBE.paragraph[ section ].ready()) {
           return [];
         }
-        result  = DB.record.find({'room' : room, 'chapter' : chapter, 'section' : section }, {'sort' : {'sort' : 1}});
         //無段落時自動新增
-        if (result.fetch().length < 1) {
+        if (count < 1) {
           DB.record.insert(
             {'room'    : room
             ,'chapter' : chapter
             ,'section' : section
             ,'sort'    : 0
             }
+          , _.identity
           )
         }
-        return result;
+        return _.sortBy(cursor.fetch(), function(v) { return v.sort; });
       }
   ,'mapLink'       :
       function() {
