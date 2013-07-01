@@ -45,7 +45,7 @@ Meteor.startup(function() {
       ,'resizerTip'               : '調整大小'
       ,'sliderTip'                : '調整大小'
       ,'center__paneSelector'     : '#map_wrapper'
-      ,'west____paneSelector'     : '#map_info'
+      ,'west____paneSelector'     : '#childLayout_west'
       ,'west__togglerTip_open'    : '關閉資訊欄'
       ,'west__togglerTip_closed'  : '開啟資訊欄'
       ,'west__size'               : 300
@@ -63,7 +63,7 @@ Meteor.startup(function() {
   switch (Meteor.Router.page()) {
   case 'main_map' :
     $('body').data('layout').resizeAll();
-    $('#map_info').css('left', 0);
+    $('#map_info').parent().css('left', 0);
     break;
   }
   //所有link改為進行route

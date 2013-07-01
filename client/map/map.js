@@ -21,7 +21,10 @@ Template.map_wrapper.events(
 var $form        = $($.parseHTML('<div />'))
   , callEditForm =
       function(ids) {
-
+        var editing = Session.get('map_editing');
+        editing = _.isArray(editing) ? ( editing.concat(ids) ) : [ ids ];
+        Session.set('map_editing', editing);
+        $form.modal('show');
       }
   ;
 
@@ -33,6 +36,15 @@ Template.map_editForm.rendered =
         this.inited = true;
       }
     }
+Template.map_editForm.helpers(
+  {'editing' :
+      function() {
+        var editing = Session.get('map_editing') || [];
+        return DB.map_detail.find({'_id' : {'$in' : editing} });
+      }
+  }
+)
+
 
 //map_info
 Template.map_info.helpers(
@@ -68,7 +80,7 @@ Template.map_info.helpers(
                   {'map'   : Session.get('map')._id
                   ,'type'  : 'affect'
                   ,'round' :
-                      {'lte' : Session.get('map').round
+                      {'$lte' : Session.get('map').round
                       }
                   }
                 ).count() > 0);
@@ -78,8 +90,8 @@ Template.map_info.helpers(
         return DB.map_detail.find(
           {'map'   : Session.get('map')._id
           ,'type'  : 'affect'
-          ,'round' :
-              {'lte' : Session.get('map').round
+          ,'until' :
+              {'$lte' : Session.get('map').round
               }
           }
         , {'sort' :
@@ -113,7 +125,7 @@ Template.map_info.events(
           case 'affect':
             data.type   = 'affect';
             data.name   = '未命名效應';
-            data.round  = 0;
+            data.until  = data.round;
             data.desc   = '';
             data.hide   = '';
             data.affect = [];
@@ -150,7 +162,7 @@ Template.map_info.events(
             data.isPublicView = false;
             break;
           }
-          Meteor.call('getTime', function(now) {
+          Meteor.call('getTime', function(err, now) {
             data._id = (now + '');
             DB.map_detail.insert(data);
             callEditForm([ data._id ]);
@@ -191,12 +203,13 @@ Template.map_info.rendered =
     function() {
       //只執行一次
       if (this.firstNode && ! this.inited) {
-        var form = this.firstNode
+        var form = document.getElementById('map_info')
           , grid = form.grid_size
           , unit = form.unit_size
           , gridSize
           , unitSize
           ;
+
         //只執行一次
         this.inited = true;
         if (STORE('map_gridSize')) {

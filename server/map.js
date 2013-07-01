@@ -71,11 +71,14 @@ DB.map_grid.allow(
           , room
           ;
 
+        map = DB.map.findOne(doc.map);
+        if (! map) {
+          return false;
+        }
         if (userID === TRPG.adm) {
           result = true;
         }
         else {
-          map = DB.map.findOne(doc.map);
           room = DB.room.findOne(map.room);
           if (map && room && (room._id === TRPG.public._id  || room.adm.indexOf(userID) !== -1) ) {
             result = true;
@@ -98,11 +101,14 @@ DB.map_grid.allow(
           , room
           ;
 
+        map = DB.map.findOne(doc.map);
+        if (! map) {
+          return false;
+        }
         if (userID === TRPG.adm) {
           result = true;
         }
         else {
-          map = DB.map.findOne(doc.map);
           room = DB.room.findOne(map.room);
           if (map && room && (room._id === TRPG.public._id  || room.adm.indexOf(userID) !== -1) ) {
             result = true;
@@ -125,11 +131,14 @@ DB.map_grid.allow(
           , room
           ;
 
+        map = DB.map.findOne(doc.map);
+        if (! map) {
+          return false;
+        }
         if (userID === TRPG.adm) {
           result = true;
         }
         else {
-          map = DB.map.findOne(doc.map);
           room = DB.room.findOne(map.room);
           if (map && room && (room._id === TRPG.public._id  || room.adm.indexOf(userID) !== -1) ) {
             result = true;
@@ -155,11 +164,14 @@ DB.map_detail.allow(
           , room
           ;
 
+        map = DB.map.findOne(doc.map);
+        if (! map) {
+          return false;
+        }
         if (userID === TRPG.adm) {
           result = true;
         }
         else {
-          map = DB.map.findOne(doc.map);
           room = DB.room.findOne(map.room);
           if (map && room && (room._id === TRPG.public._id  || room.adm.indexOf(userID) !== -1) ) {
             result = true;
@@ -182,11 +194,14 @@ DB.map_detail.allow(
           , room
           ;
 
+        map = DB.map.findOne(doc.map);
+        if (! map) {
+          return false;
+        }
         if (userID === TRPG.adm) {
           result = true;
         }
         else {
-          map = DB.map.findOne(doc.map);
           room = DB.room.findOne(map.room);
           if (map && room && (room._id === TRPG.public._id  || room.adm.indexOf(userID) !== -1) ) {
             result = true;
@@ -209,11 +224,14 @@ DB.map_detail.allow(
           , room
           ;
 
+        map = DB.map.findOne(doc.map);
+        if (! map) {
+          return false;
+        }
         if (userID === TRPG.adm) {
           result = true;
         }
         else {
-          map = DB.map.findOne(doc.map);
           room = DB.room.findOne(map.room);
           if (map && room && (room._id === TRPG.public._id  || room.adm.indexOf(userID) !== -1) ) {
             result = true;
