@@ -22,8 +22,8 @@ var $form        = $($.parseHTML('<div />'))
   , callEditForm =
       function(ids) {
         var editing = Session.get('map_editing');
-        editing = _.isArray(editing) ? ( editing.concat(ids) ) : [ ids ];
-        Session.set('map_editing', editing);
+        editing = _.isArray(editing) ? ( editing.concat(ids) ) : ids;
+        Session.set('map_editing', _.uniq(editing) );
         $form.modal('show');
       }
   ;
@@ -32,7 +32,7 @@ Template.map_editForm.rendered =
     function() {
       //只執行一次
       if (this.firstNode && ! this.inited) {
-        $form = $('#map_editForm');
+        $form = $('#map_editForm').modal({'show' : false});
         this.inited = true;
       }
     }
