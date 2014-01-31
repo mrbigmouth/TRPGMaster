@@ -5,7 +5,7 @@ Template.main_character.helpers(
       }
   ,'characterData'  :
       function() {
-        return Session.get('character');
+        return DB.character.findOne(Session.get('character') && Session.get('character')._id);
       }
   }
 )

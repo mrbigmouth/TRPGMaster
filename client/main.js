@@ -30,6 +30,7 @@ Meteor.startup(function() {
             }
         }
     ;
+  console.log('layout : ' + Meteor.Router.page());
   switch (Meteor.Router.page()) {
   case 'main_map' :
     layoutOp.north__initClosed = true;
