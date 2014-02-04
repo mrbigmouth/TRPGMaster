@@ -12,7 +12,7 @@ DB.record.allow(
         }
         else {
           room = DB.room.findOne({'_id' : doc.room});
-          if (room && room.adm.indexOf(userID) !== -1) {
+          if (room && (room.adm.indexOf(userID) !== -1 || room.player.indexOf(userID) !== -1)) {
             result = true;
           }
         }

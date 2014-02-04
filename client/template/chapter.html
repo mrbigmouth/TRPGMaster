@@ -33,9 +33,7 @@
     </header>
     <div class="content" style="display:none;">
       {{#each allParagraph}}
-        {{#isolate}}
-          {{> chapter_section_paragraph}}
-        {{/isolate}}
+        {{> chapter_section_paragraph}}
       {{/each}}
       <aside class="tool">
         <a href="javascript:" class="addParagraph" title="此章節尾端添加內容">添加</a>
@@ -59,12 +57,15 @@
   <article data-id="{{_id}}">
     <header class="tool">
       <div class="notEditing">
-        <a href="javascript:" class="edit" title="編輯此段落">編輯</a>
+        <a href="javascript:" class="blur" title="隱藏此段落的額外資訊">隱藏</a>
         {{#if _id}}
           <a href="javascript:" class="addBefore" title="在此段落前新增段落">插入</a>
           <a href="javascript:" class="addAfter" title="在此段落後新增段落">接續</a>
         {{/if}}
-        <a href="javascript:" class="blur" title="隱藏此段落的額外資訊">隱藏</a>
+        {{#if canEdit}}
+          <a href="javascript:" class="edit" title="編輯此段落">編輯</a>
+          <a href="javascript:" class="delete" title="刪除此段落">刪除</a>
+        {{/if}}
       </div>
       <div class="inEditing">
         <a href="javascript:" class="submit">送出修改</a>
@@ -72,11 +73,15 @@
       </div>
     </header>
     <div class="paragraph">
+      {{#isolate}}
       <p>{{#if content}}{{{content}}}{{else}}本節目前無內容。{{/if}}</p>
+      {{/isolate}}
     </div>
     {{#if time}}
       <footer>
+        {{#isolate}}
         <time>本文最後由 {{getNick user}} 於 {{timeChinese time}} 編輯</time>
+        {{/isolate}}
       </footer>
     {{/if}}
   </article>
