@@ -1,3 +1,14 @@
+var FiledName =
+    {'description' : '額外詳述'
+    ,'dice'        : '擲骰資料'
+    ,'item'        : '物品欄'
+    ,'level'       : '等級資訊紀錄'
+    ,'name'        : '角色名稱'
+    ,'number'      : '角色數值'
+    ,'profile'     : '基本訊息'
+    ,'spell'       : '法術表'
+    }
+
 DB.character.allow(
   {'insert' :
       function(userID, doc) {
@@ -15,10 +26,13 @@ DB.character.allow(
         return false;
       }
   ,'update' :
-      function(userID, doc) {
+      function(userID, doc, fieldNames) {
         var result = false
           , room
+          , changed
+          , now
           ;
+        console.log('update character!!!');
         if (userID === TRPG.adm || doc.adm.indexOf(userID) !== -1 ) {
           result = true;
         }
@@ -30,7 +44,22 @@ DB.character.allow(
         }
         if (result) {
           DB.character.update(doc._id, {'$set' : {'time' : Date.now()} });
-          DB.room.update(doc._id, {'$set' : {'time' : Date.now()} });
+          console.log('character status : ' + doc.status);
+          if (doc.status >= 1) {
+            changed = _.compact(_.map(fieldNames, function(v) { return FiledName[v]; }));
+            if (changed.length > 0) {
+              now = Date.now();
+              DB.message_all.insert(
+                {'user'    : userID
+                ,'room'    : doc.room
+                ,'type'    : 'room'
+                ,'msg'     : '更新了角色「' + doc.name + '」的' + changed.join('、') + '資料。'
+                ,'time'    : now
+                ,'_id'     : (now + '')
+                }
+              )
+            }
+          }
           return true;
         }
         return false;
