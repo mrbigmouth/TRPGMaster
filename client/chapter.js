@@ -481,7 +481,7 @@ Template.chapter_section_paragraph.rendered =
             .trigger('focus');
       }
       //更新時間在選取時間之後的所有文章皆自動選取
-      else if (this.data.time >= viewTime) {
+      else if (this.data.time >= selectTime) {
         $(this.firstNode).addClass('focus');
       }
     }
