@@ -68,9 +68,13 @@
               <span>擲骰結果載入中...</span>
             {{/if}}
           {{/if}}
-          {{#if haveLink}}
+          {{#if isRecord}}
             <span>　</span>
             <a href="/room/{{room}}/{{chapter}}/#{{section}}">前往</a>
+          {{/if}}
+          {{#if isCharacter}}
+            <span>　</span>
+            <a href="/character/{{character}}/">前往</a>
           {{/if}}
         {{/isolate}}
     </li>

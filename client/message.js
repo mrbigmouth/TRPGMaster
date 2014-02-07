@@ -177,9 +177,13 @@ Template.message_list.helpers(
         }
         return result;
       }
-  ,'haveLink'    :
+  ,'isRecord'    :
       function() {
         return (this.room && this.chapter && this.section);
+      }
+  ,'isCharacter'    :
+      function() {
+        return !!(this.character);
       }
   }
 )

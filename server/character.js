@@ -50,12 +50,13 @@ DB.character.allow(
             if (changed.length > 0) {
               now = Date.now();
               DB.message_all.insert(
-                {'user'    : userID
-                ,'room'    : doc.room
-                ,'type'    : 'room'
-                ,'msg'     : '更新了角色「' + doc.name + '」的' + changed.join('、') + '資料。'
-                ,'time'    : now
-                ,'_id'     : (now + '')
+                {'user'      : userID
+                ,'room'      : doc.room
+                ,'type'      : 'room'
+                ,'msg'       : '更新了角色「' + doc.name + '」的' + changed.join('、') + '資料。'
+                ,'character' : doc._id
+                ,'time'      : now
+                ,'_id'       : (now + '')
                 }
               )
             }
