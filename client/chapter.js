@@ -158,7 +158,6 @@ Template.chapter_section.events(
       function(e, ins) {
         e.stopPropagation();
         $(ins.firstNode).find('article').addClass('focus');
-        debugger;
       }
   //段落全取消選取
   ,'click header i.icon-eye-close' :
