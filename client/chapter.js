@@ -153,6 +153,19 @@ Template.chapter_section.events(
           DB.record.update(section, {'$set' : {'name' : title} });
         }
       }
+  //段落全選取
+  ,'click header i.icon-eye-open' :
+      function(e, ins) {
+        e.stopPropagation();
+        $(ins.firstNode).find('article').addClass('focus');
+        debugger;
+      }
+  //段落全取消選取
+  ,'click header i.icon-eye-close' :
+      function(e, ins) {
+        e.stopPropagation();
+        $(ins.firstNode).find('article').removeClass('focus editing');
+      }
   //場外發言
   ,'click aside a.outside' :
       function(e, ins) {
