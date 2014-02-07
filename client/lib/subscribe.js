@@ -50,8 +50,6 @@ RouterRun =
       //進入房間後載入所有該房角色名
       case 'main_room'      :
         SCRIBE.characterName = Meteor.subscribe('characterName', RouterParams.room);
-        Session.set('room', DB.room.findOne(RouterParams.room));
-        Session.set('chapter');
         break;
       case 'main_document'  :
         SCRIBE.document = Meteor.subscribe('document', RouterParams.room);
