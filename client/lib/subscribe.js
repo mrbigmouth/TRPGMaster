@@ -74,16 +74,14 @@ RouterRun =
         SCRIBE.map = Meteor.subscribe('map', RouterParams.chapter);
         break;
       case 'main_character' :
-        console.log('subscribe start!');
         SCRIBE.character =
           Meteor.subscribe(
             'character'
           , RouterParams.character
           , function() {
-              console.log('subscribe done!');
               var character = DB.character.findOne(RouterParams.character);
-              Session.set('character', character);
-              Session.set('room', character && DB.room.findOne(character.room));
+              RouterParams.room = character.room;
+              Session.set('RouterParams', RouterParams);
             }
           );
         break;

@@ -1,11 +1,18 @@
 Template.main_character.helpers(
   {'title'          :
       function() {
-        return Session.get('character') && (Session.get('room').name + '--' + Session.get('character').name + ' 角色表');
+        var RouterParams = Session.get('RouterParams')
+          , room         = DB.room.findOne(RouterParams.room)
+          , character    = DB.character.findOne(RouterParams.character)
+          ;
+        return room ? (room.name + '--' + character.name + ' 角色表') : '資料讀取中...';
       }
   ,'characterData'  :
       function() {
-        return DB.character.findOne(Session.get('character') && Session.get('character')._id);
+        var RouterParams = Session.get('RouterParams')
+          , character    = DB.character.findOne(RouterParams.character)
+          ;
+        return character;
       }
   }
 )
@@ -54,7 +61,10 @@ var sum        =
   //取得Session的角色資料(防止data dep)
   , getCharData=
     function() {
-      return Session.get('character') || {};
+      var RouterParams = Session.get('RouterParams')
+        , character    = DB.character.findOne(RouterParams.character)
+        ;
+      return character;
     }
   //尋找特定name的角色數值總合
   , findNumber =
@@ -319,7 +329,10 @@ Template.character_dice.helpers(
   ,'getNumber' : findNumber
   ,'getDice'   :
       function(name) {
-        var result = Session.get('character').dice;
+        var RouterParams = Session.get('RouterParams')
+          , character    = DB.character.findOne(RouterParams.character)
+          ;
+        var result = character.dice;
         result = findName(result, name);
         if (! result) {
           return 0;
