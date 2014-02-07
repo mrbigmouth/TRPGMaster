@@ -139,13 +139,18 @@ Template.main_room_applying.events(
       function(e, ins) {
         var RouterParams = Session.get('RouterParams')
           , room         = DB.room.findOne(RouterParams.room) || {}
-          , $this    = $(e.currentTarget)
-          , user     = $this.attr('data-id')
-          , applying = room.applying
-          , $set     = {'applying' : _.without(applying, user)}
+          , $this        = $(e.currentTarget)
+          , user         = $this.attr('data-id')
+          , applying     = room.applying
+          , thisApply    = _.find(applying, function(apply) { return apply.user === user; })
+          , $set         = {'applying' : _.without(applying, thisApply)}
           ;
         if ($this.hasClass('agree')) {
-          $set.player = _.union((room.player || []), [user]);
+          $set.player =
+            _.chain((room.player || []))
+              .union([user])
+              .uniq()
+              .value();
         }
         DB.room.update(room._id, {'$set' : $set});
       }
