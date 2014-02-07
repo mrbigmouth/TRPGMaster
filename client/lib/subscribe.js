@@ -122,7 +122,7 @@ Meteor.Router.add(
             RouterParams =
                 {'room'    : rid
                 ,'chapter' : cid
-                ,'section' : Session.get('hash').replace('#', '')
+                ,'section' : location.hash.replace('#', '')
                 }
             RouterRun.invalidate();
           }

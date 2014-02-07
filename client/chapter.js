@@ -465,9 +465,14 @@ Template.chapter_section_paragraph.events(
       }
   }
 )
+//自動選取與自動編輯
 Template.chapter_section_paragraph.rendered =
     function() {
-      var undefined;
+      var RouterParams  = Session.get('RouterParams')
+        //要自動選取起來的時間
+        , selectTime    = LastViewTime
+        , undefined
+        ;
       //自動編輯新增段落
       if (this.data.content === undefined && this.data.user === Meteor.userId()) {
         $(this.firstNode).addClass('focus editing')
@@ -475,13 +480,9 @@ Template.chapter_section_paragraph.rendered =
             .prop('contenteditable', true)
             .trigger('focus');
       }
-      //自動選取較新段落
-      else if (parseInt(this.data._id, 10) > LastViewTime) {
-        debugger;
+      //更新時間在選取時間之後的所有文章皆自動選取
+      else if (this.data.time >= viewTime) {
         $(this.firstNode).addClass('focus');
-      }
-      else {
-        debugger;
       }
     }
 //outside template
