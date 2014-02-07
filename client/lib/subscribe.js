@@ -60,8 +60,6 @@ RouterRun =
         break;
       case 'main_chapter'   :
         //訂閱章節
-        Session.set('room', DB.room.findOne(RouterParams.room));
-        Session.set('chapter', DB.record.findOne(RouterParams.chapter));
         SCRIBE.section = Meteor.subscribe('section', RouterParams.room, RouterParams.chapter);
         /*
         if (RouterParams.section && SCRIBE.paragraph[ RouterParams.section ] === undefined) {
@@ -104,6 +102,8 @@ RouterRun =
           );
         break;
       }
+
+      Session.set('RouterParams', RouterParams);
     });
 
 //定義各route路徑handler

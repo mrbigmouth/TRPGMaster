@@ -2,30 +2,31 @@
 Template.main_chapter.helpers(
   {'isLoading'  :
       function() {
-        return ! Session.get('chapter');
+        var RouterParams = Session.get('RouterParams');
+        return ! DB.record.findOne(RouterParams.chapter);
       }
   ,'title'      :
       function() {
-        var room    = Session.get('room')
-          , chapter = Session.get('chapter')
+        var RouterParams = Session.get('RouterParams')
+          , room         = DB.room.findOne(RouterParams.room)
+          , chapter      = DB.record.findOne(RouterParams.chapter)
           ;
         return room.name + '--' + chapter.name;
       }
   ,'allSection' :
       function() {
-        var room    = Session.get('room')._id
-          , chapter = Session.get('chapter')._id
-          ;
-        return DB.record.find({'room' : room, 'chapter' : chapter, 'section' : {'$exists' : false} });
+        var RouterParams = Session.get('RouterParams');
+        return DB.record.find({'room' : RouterParams.room, 'chapter' : RouterParams.chapter, 'section' : {'$exists' : false} });
       }
   }
 );
 Template.main_chapter.events(
   {'click ul.breadcrumb a.addSection' :
       function(e, ins) {
-        var room    = Session.get('room')._id
-          , chapter = Session.get('chapter')._id
-          , sort    = DB.record.find({'room' : room, 'chapter' : chapter, 'section' : {'$exists' : false} }).count()
+        var RouterParams = Session.get('RouterParams')
+          , room         = RouterParams.room
+          , chapter      = RouterParams.chapter
+          , sort         = DB.record.find({'room' : room, 'chapter' : chapter, 'section' : {'$exists' : false} }).count()
           ;
         DB.record.insert(
           {'room'    : room
@@ -37,15 +38,40 @@ Template.main_chapter.events(
       }
   }
 )
+//紀錄上次觀看時間
+LastViewTime = 0;
+//紀錄觀看時間
+Template.main_chapter.created =
+    function() {
+      var RouterParams = Session.get('RouterParams')
+        , viewTime     = STORE('recordViewTime') || {}
+        , chapter      = RouterParams.chapter
+        , thisViewTime = viewTime[ chapter ] || [0 , 0]
+        ;
+      //紀錄上次觀看時間
+      LastViewTime = thisViewTime[1] = thisViewTime[0];
+      //紀錄這次觀看時間
+      thisViewTime[0] = Date.now();
+      viewTime[ chapter ] = thisViewTime;
+      STORE('recordViewTime', viewTime);
+    }
+//依據hash傳送到指定節
 Template.main_chapter.rendered =
     function() {
-      var hash  = Session.get('hash');
-      if (hash && $(hash).length > 0) {
+      var RouterParams = Session.get('RouterParams')
+        , section      = RouterParams.section
+        ;
+      if (section && $('#' + section).length > 0) {
         _.delay(function() { location.hash = hash }, 50);
-        Session.set('hash');
       }
     }
 
+//訂閱一個section
+function subscribeSection(room, chapter, id) {
+  if (! SCRIBE.paragraph[ id ]) {
+    SCRIBE.paragraph[ id ] = Meteor.subscribe('paragraph', room, chapter, id);
+  }
+}
 
 //section template
 Template.chapter_section.helpers(
@@ -97,10 +123,11 @@ Template.chapter_section.events(
   //展開收起此章節
   {'click header' :
       function(e, ins) {
-        var room     = Session.get('room')._id
-          , chapter  = Session.get('chapter')._id
-          , $section = $(ins.firstNode)
-          , section  = ins.firstNode.id
+        var RouterParams = Session.get('RouterParams')
+          , room         = RouterParams.room
+          , chapter      = RouterParams.chapter
+          , $section     = $(ins.firstNode)
+          , section      = ins.firstNode.id
           ;
         if (ins.opened) {
           if ($section.find('article.editing').length > 0) {
@@ -110,9 +137,7 @@ Template.chapter_section.events(
           ins.opened = false;
         }
         else {
-          if (! SCRIBE.paragraph[ section ]) {
-            SCRIBE.paragraph[ section ] = Meteor.subscribe('paragraph', room, chapter, section);
-          }
+          subscribeSection(room, chapter, section);
           $section.children('div.content').show();
           ins.opened = true;
         }
@@ -222,10 +247,11 @@ Template.chapter_section.events(
   //新增段落
   ,'click aside a.addParagraph' :
       function(e, ins) {
-        var room    = Session.get('room')._id
-          , chapter = Session.get('chapter')._id
-          , section = ins.firstNode.id
-          , sort    = DB.record.find({'room' : room, 'chapter' : chapter, 'section' : section }).count()
+        var RouterParams = Session.get('RouterParams')
+          , room         = RouterParams.room
+          , chapter      = RouterParams.chapter
+          , section      = ins.firstNode.id
+          , sort         = DB.record.find({'room' : room, 'chapter' : chapter, 'section' : section }).count()
           ;
 
         DB.record.insert(
@@ -243,7 +269,7 @@ Template.chapter_section.events(
 //判斷是否自動展開
 Template.chapter_section.created =
     function () {
-      var data    = this.data
+      var data     = this.data
         ;
       //若已訂閱此章節
       if (SCRIBE.paragraph[ data._id ]) {
@@ -252,15 +278,7 @@ Template.chapter_section.created =
       //三天內有更新者自動進行訂閱
       else if (Date.now() - data.time <= 259200000) {
         this.opened = true;
-        if (! SCRIBE.paragraph[ data._id ]) {
-          SCRIBE.paragraph[ data._id ] =
-            Meteor
-              .subscribe( 'paragraph'
-                        , data.room
-                        , data.chapter
-                        , data._id
-                        );
-        }
+        subscribeSection(data.room, data.chapter, data._id);
       }
     }
 //自動展開
@@ -282,8 +300,11 @@ Template.chapter_section_paragraph.helpers(
   ,'getNick'     : TOOL.getUserNick
   ,'canEdit'     :
       function() {
-        var user = Meteor.userId();
-        return (user && (user === this.user || user === TRPG.adm || _.indexOf(Session.get('room').adm, user) !== -1));
+        var RouterParams = Session.get('RouterParams')
+          , room         = DB.room.findOne(RouterParams.room)
+          , user         = Meteor.userId()
+          ;
+        return (user && (user === this.user || user === TRPG.adm || _.indexOf(room.adm, user) !== -1));
       }
   }
 )
@@ -430,18 +451,25 @@ Template.chapter_section_paragraph.events(
       }
   }
 )
-//自動編輯新增段落
 Template.chapter_section_paragraph.rendered =
     function() {
       var undefined;
-      if (this.data.content === undefined) {
+      //自動編輯新增段落
+      if (this.data.content === undefined && this.data.user === Meteor.userId()) {
         $(this.firstNode).addClass('focus editing')
           .find('div.paragraph')
             .prop('contenteditable', true)
             .trigger('focus');
       }
+      //自動選取較新段落
+      else if (parseInt(this.data._id, 10) > LastViewTime) {
+        debugger;
+        $(this.firstNode).addClass('focus');
+      }
+      else {
+        debugger;
+      }
     }
-
 //outside template
 Template.chapter_section_outside.helpers(
   {'allOutside'  :
