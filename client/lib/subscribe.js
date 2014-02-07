@@ -53,8 +53,6 @@ RouterRun =
         break;
       case 'main_document'  :
         SCRIBE.document = Meteor.subscribe('document', RouterParams.room);
-        Session.set('room', DB.room.findOne(RouterParams.room));
-        Session.set('chapter');
         break;
       case 'main_chapter'   :
         //訂閱章節
@@ -91,10 +89,7 @@ RouterRun =
             'map_detail'
           , RouterParams.room
           , RouterParams.map
-          , function() {
-              Session.set('map', DB.map.findOne(RouterParams.map));
-              Session.set('room', DB.room.findOne(RouterParams.room));
-            }
+          , $.noop()
           );
         break;
       }
@@ -116,10 +111,7 @@ Meteor.Router.add(
       {'to'  : 'main_document'
       ,'and' :
           function(rid) {
-            if (! Session.get('hash')) {
-              Session.set('hash', location.hash);
-            }
-            RouterParams = {'room' : rid};
+            RouterParams = {'room' : rid, 'document' : location.hash.replace('#', '')};
             RouterRun.invalidate();
           }
       }
@@ -127,9 +119,6 @@ Meteor.Router.add(
       {'to'  : 'main_chapter'
       ,'and' :
           function(rid, cid) {
-            if (! Session.get('hash')) {
-              Session.set('hash', location.hash);
-            }
             RouterParams =
                 {'room'    : rid
                 ,'chapter' : cid

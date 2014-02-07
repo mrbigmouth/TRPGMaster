@@ -2,10 +2,8 @@
 Template.main_document.helpers(
   {'rootDocument' :
       function() {
-        var room = Session.get('room');
-        if (room) {
-          return DB.document.find({'room' : room._id, 'parent': null}, {'sort' : {'sort' : 1}});
-        }
+        var RouterParams = Session.get('RouterParams');
+        return DB.document.find({'room' : RouterParams.room, 'parent': null}, {'sort' : {'sort' : 1}});
       }
   ,'isAdm'        : TOOL.userIsAdm
   }
@@ -13,11 +11,12 @@ Template.main_document.helpers(
 Template.main_document.events(
   {'click i.icon-plus-sign' :
       function(e, ins) {
-        var data    = {}
-          , $parent = $(e.currentTarget).closest('li.eachDocument')
+        var RouterParams = Session.get('RouterParams')
+          , data         = {}
+          , $parent      = $(e.currentTarget).closest('li.eachDocument')
           ;
         e.stopImmediatePropagation();
-        data.room = Session.get('room')._id;
+        data.room = RouterParams.room;
         data.name = window.prompt('請輸入資料標題');
         if (! data.name) {
           return false;
@@ -36,13 +35,14 @@ Template.main_document.events(
       }
   }
 )
+var toHash = _.debounce(function(hash) { location.hash = hash; }, 500);
 Template.main_document.rendered =
     function() {
-      var hash  = Session.get('hash');
-      if (hash && $(hash).length > 0) {
-        _.delay(function() { location.hash = hash; }, 50);
-        Session.set('hash');
-      }
+      var RouterParams = Session.get('RouterParams')
+        , docID  = RouterParams.document
+        , hash   = '#' + docID
+        ;
+      toHash(hash);
     }
 
 //nav

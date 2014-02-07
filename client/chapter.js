@@ -56,13 +56,15 @@ Template.main_chapter.created =
       STORE('recordViewTime', viewTime);
     }
 //依據hash傳送到指定節
+var toHash = _.debounce(function(hash) { location.hash = hash; }, 500);
 Template.main_chapter.rendered =
     function() {
       var RouterParams = Session.get('RouterParams')
         , section      = RouterParams.section
+        , hash         = '#' + section
         ;
-      if (section && $('#' + section).length > 0) {
-        _.delay(function() { location.hash = hash }, 50);
+      if (section && $(hash).length > 0) {
+        toHash(hash);
       }
     }
 
