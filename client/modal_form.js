@@ -280,13 +280,16 @@ Template.modal_form_account.events(
 //時間設定
 Template.modal_form_selectTime.rendered =
     function() {
-      $(this.firstNode).find('div.date').datetimepicker(
-        {'maskInput': true
-        ,'pickDate' : true
-        ,'pickTime' : true
-        }
-      );
-      console.log($(this.firstNode).find('div.date').length);
+      $(this.firstNode)
+        .find('div.date')
+          .datetimepicker(
+            {'maskInput': true
+            ,'pickDate' : true
+            ,'pickTime' : true
+            }
+          )
+          .find('input.datetime')
+            .val( moment().add('days', -1).format('YYYY/MM/DD HH:mm:ss') );
     }
 
 //章節目錄選擇時間篩選器
@@ -302,3 +305,28 @@ Template.chapter_section.events(
       }
   }
 );
+Template.modal_form_selectTime.events(
+  {'click button.btn-primary' :
+      function() {
+        var selectTime = Date.parse($form.find('input.datetime').val());
+        $('article[data-id]')
+          .removeClass('focus editing')
+          .each(function() {
+            var $this  = $(this)
+              , id     = $this.attr('data-id')
+              , record = DB.record.findOne(id)
+              , time   = record ? record.time : 0
+              ;
+
+            if (time >= selectTime) {
+              $this.addClass('focus');
+            }
+          });
+        $form.modal('hide');
+      }
+  ,'focus input.datetime' :
+      function() {
+        $form.find('i.icon-calendar').trigger('click');
+      }
+  }
+)

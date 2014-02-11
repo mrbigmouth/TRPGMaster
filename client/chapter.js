@@ -54,6 +54,18 @@ Template.main_chapter.created =
       thisViewTime[0] = Date.now();
       viewTime[ chapter ] = thisViewTime;
       STORE('recordViewTime', viewTime);
+      //正在編輯文章且將離開網頁時新增提示訊息
+      window.onbeforeunload =
+        function() {
+          if ($('article.editing').length > 0) {
+            return '你正在編輯文章，離開此網頁將會失去所有編輯訊息，是否確定？'; 
+          }
+        };
+    }
+//離開時取消離開網頁事件
+Template.main_chapter.destroyed =
+    function() {
+      window.onbeforeunload = $.noop;
     }
 //依據hash傳送到指定節
 var toHash = _.debounce(function(hash) { location.hash = hash; }, 500);
@@ -425,6 +437,7 @@ Template.chapter_section_paragraph.events(
           , inc
           , undefined
           ;
+        if ($this.parent().find('article'))
         $(ins.firstNode).find('div.paragraph').find('p').each(function() {
           content.push($(this).html());
         });
@@ -443,7 +456,7 @@ Template.chapter_section_paragraph.events(
           //將後方的所有段落sort += 新增的段落數量
           $this.nextAll('article').each(function(i) {
             var id = $(this).attr('data-id');
-            DB.record.update(id, {'$set' : {'sort' : inc + sort} });
+            DB.record.update(id, {'$inc' : {'sort' : inc} });
           });
           //依序新增
           _.each(content, function(d, k) {
