@@ -70,6 +70,12 @@ helpers =
         formDep.depend();
         return (formData['type'] === 'applyRoom');
       }
+  //選擇時間
+  ,'selectTime' :
+      function() {
+        formDep.depend();
+        return (formData['type'] === 'selectTime');
+      }
   }
 Template.modal_form.helpers(helpers)
 
@@ -270,3 +276,29 @@ Template.modal_form_account.events(
       }
   }
 )
+
+//時間設定
+Template.modal_form_selectTime.rendered =
+    function() {
+      $(this.firstNode).find('div.date').datetimepicker(
+        {'maskInput': true
+        ,'pickDate' : true
+        ,'pickTime' : true
+        }
+      );
+      console.log($(this.firstNode).find('div.date').length);
+    }
+
+//章節目錄選擇時間篩選器
+Template.chapter_section.events(
+  {'click i.icon-filter' : 
+      function(e) {
+        e.stopPropagation();
+        callForm(
+          {'title'   : '選取特定時間之後的段落'
+          ,'type'    : 'selectTime'
+          }
+        )
+      }
+  }
+);
