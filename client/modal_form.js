@@ -283,7 +283,7 @@ Template.modal_form_selectTime.rendered =
       $(this.firstNode)
         .find('div.date')
           .datetimepicker(
-            {'maskInput': true
+            {'maskInput': false
             ,'pickDate' : true
             ,'pickTime' : true
             }
