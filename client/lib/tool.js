@@ -24,13 +24,19 @@ TOOL =
   //判斷目前使用者是否為目前房間之管理者
   ,'userIsAdm' :
       function() {
-        var id = Meteor.userId();
-        return (id && (id == TRPG.adm || _.indexOf(Session.get('room').adm, id) !== -1 ));
+        var RouterParams = Session.get('RouterParams')
+          , room         = DB.room.findOne(RouterParams.room)
+          , id           = Meteor.userId()
+          ;
+        return (id && (id == TRPG.adm || (room && _.indexOf(room.adm, id) !== -1) ));
       }
   //判斷目前使用者是否為目前房間之玩家
   ,'userIsPlayer' :
       function() {
-        var id = Meteor.userId();
-        return (id && (id == TRPG.adm || _.indexOf(Session.get('room').adm, id) !== -1 || _.indexOf(Session.get('room').player, id) !== -1));
+        var RouterParams = Session.get('RouterParams')
+          , room         = DB.room.findOne(RouterParams.room)
+          , id           = Meteor.userId()
+          ;
+        return ( id && (id == TRPG.adm || ( room && (_.indexOf(room.adm, id) !== -1 || _.indexOf(room.player, id) !== -1) ) ) );
       }
   };
