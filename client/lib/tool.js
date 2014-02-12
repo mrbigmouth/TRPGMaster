@@ -39,4 +39,17 @@ TOOL =
           ;
         return ( id && (id == TRPG.adm || ( room && (_.indexOf(room.adm, id) !== -1 || _.indexOf(room.player, id) !== -1) ) ) );
       }
+  //判斷一個物件的各key是否undefined
+  ,'keyIsUndefined' :
+      function() {
+        var undefined
+          , i
+          ;
+        for (i in arguments) {
+          if (this[ arguments[ i ] ] !== undefined) {
+            return false;
+          }
+        }
+        return true;
+      }
   };
