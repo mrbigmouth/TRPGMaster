@@ -250,7 +250,7 @@ DB.map_detail.allow(
   }
 )
 
-Meteor.publish('map_detail', function (roomID, mapID) {
+Meteor.publish('map_detail', function (roomID, mapID, round) {
   var userID = this.userID
     , room   = DB.room.findOne(roomID)
     , map    = DB.map.findOne(mapID)
@@ -258,12 +258,13 @@ Meteor.publish('map_detail', function (roomID, mapID) {
   if (! map || ! room ||  map.room !== roomID) {
     this.error(new Meteor.Error(404, '錯誤的訂閱參數!', '錯誤的訂閱參數!'));
   }
-  if (! room.public && userID !== TRPG.adm && room.adm.indexOf(userID) === -1) {
+  if (! room.public && userID !== TRPG.adm && room.adm.indexOf(userID) === -1 && room.player.indexOf(userID) === -1) {
     this.error(new Meteor.Error(401, '權限不足!', '權限不足!'));
   }
+  round = round ? round : map.round;
   return [ DB.map.find(mapID)
-         , DB.map_grid.find({'map' : mapID})
-         , DB.map_detail.find({'map' : mapID})
+         , DB.map_grid.find({'map' : mapID, 'round' : round})
+         , DB.map_detail.find({'map' : mapID, 'round' : round})
          ];
 });
 

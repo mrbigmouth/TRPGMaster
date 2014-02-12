@@ -89,6 +89,7 @@ RouterRun =
             'map_detail'
           , RouterParams.room
           , RouterParams.map
+          , RouterParams.round
           , $.noop()
           );
         break;
@@ -139,8 +140,20 @@ Meteor.Router.add(
       ,'and' :
           function(rid, mid) {
             RouterParams =
-              {'room' : rid
-              ,'map'  : mid
+              {'room'  : rid
+              ,'map'   : mid
+              ,'round' : 0
+              };
+          }
+      }
+  ,'/map/:rid/:mid/:round/'        :
+      {'to'  : 'main_map'
+      ,'and' :
+          function(rid, mid, round) {
+            RouterParams =
+              {'room'  : rid
+              ,'map'   : mid
+              ,'round' : round
               };
           }
       }
