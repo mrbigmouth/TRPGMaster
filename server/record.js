@@ -126,7 +126,7 @@ Meteor.publish('chapter', function (rooms) {
 Meteor.publish('section', function (room, chapter) {
   return [
     DB.record.find({'room':room, 'chapter': chapter, 'section' : {'$exists' : false}}, { 'sort': {'sort':1} })
-  , DB.message_all.find({'chapter' : chapter})
+  , DB.message_all.find({'chapter' : chapter, 'type' : {'$in' : ['outside', 'dice']}})
   ];
 });
 

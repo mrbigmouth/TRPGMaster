@@ -502,7 +502,7 @@ Template.chapter_section_paragraph.rendered =
 Template.chapter_section_outside.helpers(
   {'allOutside'  :
       function() {
-        return DB.message_recent.find({'section' : this._id, 'type' : {'$in' : ['outside', 'dice']}},{'sort' : {'_id' : 1}});
+        return DB.message_all.find({'section' : this._id, 'type' : {'$in' : ['outside', 'dice']}},{'sort' : {'_id' : 1}});
       }
   ,'timeChinese' : TOOL.convertTimeToChinese
   ,'getNick'     : TOOL.getUserNick
