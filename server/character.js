@@ -32,7 +32,6 @@ DB.character.allow(
           , changed
           , now
           ;
-        console.log('update character!!!');
         if (userID === TRPG.adm || doc.adm.indexOf(userID) !== -1 ) {
           result = true;
         }
@@ -44,7 +43,6 @@ DB.character.allow(
         }
         if (result) {
           DB.character.update(doc._id, {'$set' : {'time' : Date.now()} });
-          console.log('character status : ' + doc.status);
           if (doc.status >= 1) {
             changed = _.compact(_.map(fieldNames, function(v) { return FiledName[v]; }));
             if (changed.length > 0) {
