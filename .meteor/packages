@@ -10,5 +10,5 @@ accounts-base
 accounts-facebook
 accounts-google
 accounts-password
-router
 jquery-layout
+iron-router
