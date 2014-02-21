@@ -1,26 +1,63 @@
-//chapter template
-Template.main_chapter.helpers(
-  {'isLoading'  :
-      function() {
-        var RouterParams = Session.get('RouterParams');
-        return ! DB.record.findOne(RouterParams.chapter);
-      }
-  ,'title'      :
-      function() {
-        var RouterParams = Session.get('RouterParams')
-          , room         = DB.room.findOne(RouterParams.room)
-          , chapter      = DB.record.findOne(RouterParams.chapter)
+//首頁router
+var LastViewTime = 0;
+Router.map(function () {
+  this.route(
+    'record'
+  , {'path'      : '/room/:room/:chapter/'
+    ,'template'  : 'main_record'
+    ,'waitOn'    :
+        function() {
+          var params = this.params
+            ;
+          return Meteor.subscribe('chapter', params.room, params.chapter, (params.hash || ''));
+        }
+    ,'after'     :
+        function() {
+          var RouterParams = this.params
+            , viewTime     = STORE('recordViewTime') || {}
+            , chapter      = RouterParams.chapter
+            , thisViewTime = viewTime[ chapter ] || [0 , 0]
+            ;
+          //紀錄上次觀看時間
+          LastViewTime = thisViewTime[1] = thisViewTime[0];
+          //紀錄這次觀看時間
+          thisViewTime[0] = Date.now();
+          viewTime[ chapter ] = thisViewTime;
+          STORE('recordViewTime', viewTime);
+          //離開頁面警示
+          window.onbeforeunload =
+            function() {
+              if ($('article.editing').length > 0) {
+                return '你正在編輯文章，離開此網頁將會失去所有編輯訊息，是否確定？'; 
+              }
+            };
+        }
+    ,'unload'    :
+        function() {
+          window.onbeforeunload = $.noop;
+        }
+    }
+  );
+});
+
+
+Template.main_record.helpers(
+  {'title'      :
+      function(name) {
+        var params  = Session.get('RouterParams')
+          , room    = DB.room.findOne(params.room) || {'name' : ''}
+          , chapter = DB.record.findOne(params.chapter) || {'name' : ''}
           ;
         return room.name + '--' + chapter.name;
       }
   ,'allSection' :
       function() {
         var RouterParams = Session.get('RouterParams');
-        return DB.record.find({'room' : RouterParams.room, 'chapter' : RouterParams.chapter, 'section' : {'$exists' : false} });
+        return DB.record.find({'room' : RouterParams.room, 'chapter' : RouterParams.chapter, 'section' : {'$exists' : false} }, {'sort' : {'sort' : 1}});
       }
   }
 );
-Template.main_chapter.events(
+Template.main_record.events(
   {'click ul.breadcrumb a.addSection' :
       function(e, ins) {
         var RouterParams = Session.get('RouterParams')
@@ -35,57 +72,22 @@ Template.main_chapter.events(
           ,'sort'    : sort
           }
         );
+        //更新紀錄
+        DB.message_all.insert(
+          {'user'    : Meteor.userId()
+          ,'room'    : room
+          ,'chapter' : chapter
+          ,'type'    : 'room'
+          ,'msg'     : '更新了遊戲紀錄。'
+          }
+        )
+      }
+  ,'click ul.breadcrumb a.goSection'  :
+      function(e) {
+        location.href = '#' + $(e.currentTarget).attr('data-id');
       }
   }
 )
-//紀錄上次觀看時間
-LastViewTime = 0;
-//紀錄觀看時間
-Template.main_chapter.created =
-    function() {
-      var RouterParams = Session.get('RouterParams')
-        , viewTime     = STORE('recordViewTime') || {}
-        , chapter      = RouterParams.chapter
-        , thisViewTime = viewTime[ chapter ] || [0 , 0]
-        ;
-      //紀錄上次觀看時間
-      LastViewTime = thisViewTime[1] = thisViewTime[0];
-      //紀錄這次觀看時間
-      thisViewTime[0] = Date.now();
-      viewTime[ chapter ] = thisViewTime;
-      STORE('recordViewTime', viewTime);
-      //正在編輯文章且將離開網頁時新增提示訊息
-      window.onbeforeunload =
-        function() {
-          if ($('article.editing').length > 0) {
-            return '你正在編輯文章，離開此網頁將會失去所有編輯訊息，是否確定？'; 
-          }
-        };
-    }
-//離開時取消離開網頁事件
-Template.main_chapter.destroyed =
-    function() {
-      window.onbeforeunload = $.noop;
-    }
-//依據hash傳送到指定節
-var toHash = _.debounce(function(hash) { location.hash = hash; }, 500);
-Template.main_chapter.rendered =
-    function() {
-      var RouterParams = Session.get('RouterParams')
-        , section      = RouterParams.section
-        , hash         = '#' + section
-        ;
-      if (section && $(hash).length > 0) {
-        toHash(hash);
-      }
-    }
-
-//訂閱一個section
-function subscribeSection(room, chapter, id) {
-  if (! SCRIBE.paragraph[ id ]) {
-    SCRIBE.paragraph[ id ] = Meteor.subscribe('paragraph', room, chapter, id);
-  }
-}
 
 //section template
 Template.chapter_section.helpers(
@@ -94,26 +96,10 @@ Template.chapter_section.helpers(
         var room    = this.room
           , chapter = this.chapter
           , section = this._id
-          , cursor  = DB.record.find({'room' : room, 'chapter' : chapter, 'section' : section })
-          , count   = cursor.count()
-          , result
+          , cursor  = DB.record.find({'room' : room, 'chapter' : chapter, 'section' : section }, {'sort' : {'sort' : 1}})
           ;
 
-        if (! SCRIBE.paragraph[ section ] || ! SCRIBE.paragraph[ section ].ready()) {
-          return [];
-        }
-        //無段落時自動新增
-        if (count < 1) {
-          DB.record.insert(
-            {'room'    : room
-            ,'chapter' : chapter
-            ,'section' : section
-            ,'sort'    : 0
-            }
-          , _.identity
-          )
-        }
-        return _.sortBy(cursor.fetch(), function(v) { return v.sort; });
+        return DB.record.find({'room' : room, 'chapter' : chapter, 'section' : section }, {'sort' : {'sort' : 1}});
       }
   ,'mapLink'       :
       function() {
@@ -140,31 +126,41 @@ Template.chapter_section.events(
         var RouterParams = Session.get('RouterParams')
           , room         = RouterParams.room
           , chapter      = RouterParams.chapter
-          , $section     = $(ins.firstNode)
           , section      = ins.firstNode.id
+          , $section     = $(ins.firstNode)
+          , $content     = $section.children('div.content')
           ;
-        if (ins.opened) {
-          if ($section.find('article.editing').length > 0) {
-            return false;
-          }
-          $section.children('div.content').hide();
-          ins.opened = false;
+        if ($section.find('article.editing').length > 0) {
+          return false;
+        }
+        if ($content.is(':visible')) {
+          $content.hide();
         }
         else {
-          subscribeSection(room, chapter, section);
-          $section.children('div.content').show();
-          ins.opened = true;
+          Meteor.subscribe('chapter', room, chapter, section);
+          $content.show();
         }
       }
   //編輯章節標題
   ,'click header i.icon-pencil' :
       function(e, ins) {
         var section = ins.firstNode.id
+          , insData = ins.data
           , title   = window.prompt('請輸入新標題：')
           ;
         e.stopPropagation();
         if (title) {
           DB.record.update(section, {'$set' : {'name' : title} });
+          //更新紀錄
+          DB.message_all.insert(
+            {'user'    : Meteor.userId()
+            ,'room'    : insData.room
+            ,'chapter' : insData.chapter
+            ,'section' : section
+            ,'type'    : 'room'
+            ,'msg'     : '更新了遊戲紀錄。'
+            }
+          )
         }
       }
   //段落全選取
@@ -288,25 +284,25 @@ Template.chapter_section.events(
           ,'content' : ''
           }
         );
+        //更新紀錄
+        DB.message_all.insert(
+          {'user'    : Meteor.userId()
+          ,'room'    : room
+          ,'chapter' : chapter
+          ,'section' : section
+          ,'type'    : 'room'
+          ,'msg'     : '更新了遊戲紀錄。'
+          }
+        )
+      }
+  //回到頁首
+  ,'click aside a.top' :
+      function() {
+        location.href = '#main_record';
       }
   }
 )
 
-//判斷是否自動展開
-Template.chapter_section.created =
-    function () {
-      var data     = this.data
-        ;
-      //若已訂閱此章節
-      if (SCRIBE.paragraph[ data._id ]) {
-        this.opened = true;
-      }
-      //三天內有更新者自動進行訂閱
-      else if (Date.now() - data.time <= 259200000) {
-        this.opened = true;
-        subscribeSection(data.room, data.chapter, data._id);
-      }
-    }
 //自動展開
 Template.chapter_section.rendered =
     function () {
@@ -314,7 +310,7 @@ Template.chapter_section.rendered =
         , $section = $(this.firstNode)
         ;
       //已訂閱之section自動展開
-      if (this.opened) {
+      if (DB.record.findOne({'section' : id})) {
         $section.children('div.content').show();
       }
     }
@@ -327,10 +323,9 @@ Template.chapter_section_paragraph.helpers(
   ,'canEdit'     :
       function() {
         var RouterParams = Session.get('RouterParams')
-          , room         = DB.room.findOne(RouterParams.room)
           , user         = Meteor.userId()
           ;
-        return (user && (user === this.user || user === TRPG.adm || _.indexOf(room.adm, user) !== -1));
+        return (user && (user === this.user || TOOL.userIsAdm(RouterParams.room) ));
       }
   }
 )
@@ -398,22 +393,43 @@ Template.chapter_section_paragraph.events(
   //刪除段落
   ,'click article header a.delete' :
       function(e, ins) {
+        var insData = ins.data
+          , room    = insData.room
+          , chapter = insData.chapter
+          , section = insData.section || insData._id
+          ;
         e.stopPropagation();
         if (window.confirm('你確定要刪除此段落？')) {
+          $(ins.firstNode).nextAll('article').each(function() {
+            DB.record.update($(this).attr('data-id'), {'$inc' : {'sort' : -1} });
+          });
           DB.record.remove($(ins.firstNode).attr('data-id'));
+          //更新紀錄
+          DB.message_all.insert(
+            {'user'    : Meteor.userId()
+            ,'room'    : room
+            ,'chapter' : chapter
+            ,'section' : section
+            ,'type'    : 'room'
+            ,'msg'     : '刪除了遊戲紀錄。'
+            }
+          )
         }
       }
   //取消修改
   ,'click article header a.cancel' :
       function(e, ins) {
         e.stopPropagation();
-        var $this = $(ins.firstNode);
+        var $this   = $(ins.firstNode)
+          , insData = ins.data
+          ;
         if (! $this.hasClass('editing')) {
           return false;
         }
         $this
           .removeClass('editing')
           .find('div.paragraph')
+            .html(insData.content)
             .prop('contenteditable', false);
       }
   //送出修改
@@ -421,7 +437,7 @@ Template.chapter_section_paragraph.events(
       function(e, ins) {
         e.stopPropagation();
         var userID  = Meteor.userId()
-          , $this   = $(e.currentTarget).closest('article')
+          , $this   = $(ins.firstNode)
           , insData = ins.data
           , room    = insData.room
           , chapter = insData.chapter
@@ -437,16 +453,15 @@ Template.chapter_section_paragraph.events(
           , inc
           , undefined
           ;
-        if ($this.parent().find('article'))
         $(ins.firstNode).find('div.paragraph').find('p').each(function() {
           content.push($(this).html());
         });
         sort = $this.prevAll('article').length;
         //如果是編修已存在的段落
         if (insData._id !== undefined) {
-          newData.content = content.shift();
+          insData.content = content.shift();
           //更新第一段內容
-          DB.record.update(insData._id, {'$set' : newData});
+          DB.record.update(insData._id, {'$set' : {'content' : insData.content}});
           //sort排序+1
           sort += 1;
         }
@@ -475,6 +490,12 @@ Template.chapter_section_paragraph.events(
           ,'msg'     : '更新了遊戲紀錄。'
           }
         )
+        //取消編輯模式
+        $this
+          .removeClass('editing')
+          .find('div.paragraph')
+            .html(insData.content)
+            .prop('contenteditable', false);
       }
   }
 )

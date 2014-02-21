@@ -1,54 +1,42 @@
 <template name="main_room">
-  {{#if loaded}}
-    <h1>{{#isolate}} {{title}} {{/isolate}}</h1>
-    <section>
-      <h2>狀態：{{status}}</h2>
-      <div>
-        {{{desc}}}
-      </div>
-      {{#if canApply}}
-        <a href="javascript:" class="apply">申請加入</a>
-      {{/if}}
-    </section>
-
-    <section>
-      <p>玩家名單：</p>
-      <ul>
-        {{#each player}}
-          <li>{{getNick this}}：{{getCharacter this}}</li>
-        {{/each}}
-      </ul>
-    </section>
-    {{#if isAdm}}
-      {{> main_room_applying}}
+  <h1>{{title}}</h1>
+  <section>
+    <h2>狀態：{{status}}</h2>
+    <div>
+      {{{desc}}}
+    </div>
+    {{#if canApply}}
+      <a href="javascript:" class="apply">申請加入</a>
     {{/if}}
-    <section>
-     <h2>章節區</h2>
-      <ul class="breadcrumb">
-        {{#isolate}}
-          {{#each allChapters}}
-            <li><a href="/room/{{room}}/{{_id}}/"> {{name}} </a> <span class="divider">/</span></li>
-          {{/each}}
-          {{#if isAdm}}
-            <li><a href="javascript:" class="addChapter">新增章節</a></li>
-          {{/if}}
-        {{/isolate}}
-      </ul>
-    </section>
-    <section>
-      <h2>角色區</h2>
-      <ul class="breadcrumb">
-        {{#each allCharacters}}
-          <li><a href="/character/{{_id}}/">{{#isolate}} {{name}} {{/isolate}}</a> <span class="divider">/</span></li>
-        {{/each}}
-        {{#if isPlayer}}
-          <li><a href="javascript:" class="addCharacter">新增角色</a></li>
-        {{/if}}
-      </ul>
-    </section>
-  {{else}}
-    載入中...
+  </section>
+
+  {{#if isAdm}}
+    {{> main_room_applying}}
   {{/if}}
+  <section>
+   <h2>章節區</h2>
+    <ul class="breadcrumb">
+      {{#isolate}}
+        {{#each allChapters}}
+          <li><a href="/room/{{this.room}}/{{this._id}}/"> {{this.name}} </a> <span class="divider">/</span></li>
+        {{/each}}
+        {{#if isAdm}}
+          <li><a href="javascript:" class="addChapter">新增章節</a></li>
+        {{/if}}
+      {{/isolate}}
+    </ul>
+  </section>
+  <section>
+    <h2>角色區</h2>
+    <ul class="breadcrumb">
+      {{#each allCharacters}}
+        <li><a href="/character/{{this.room}}/{{this._id}}/"> {{this.name}} </a> <span class="divider">/</span></li>
+      {{/each}}
+      {{#if isPlayer}}
+        <li><a href="javascript:" class="addCharacter">新增角色</a></li>
+      {{/if}}
+    </ul>
+  </section>
 </template>
 
 <template name="main_room_applying">
@@ -57,10 +45,10 @@
     <ul>
       {{#each applying}}
         <li>
-          {{getNick user}}({{user}})，申請理由：{{applyText}}
+          {{getNick user}}({{this.user}})，申請理由：{{applyText}}
           <br />
-          <a href="javascript:" class="btn btn-primary agree" data-id="{{user}}">允許</a>
-          <a href="javascript:" class="btn refuse" data-id="{{user}}">拒絕</a>
+          <a href="javascript:" class="btn btn-primary agree" data-id="{{this.user}}">允許</a>
+          <a href="javascript:" class="btn refuse" data-id="{{this.user}}">拒絕</a>
         </li>
       {{/each}}
     </ul>

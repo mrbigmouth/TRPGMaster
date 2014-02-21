@@ -1,10 +1,21 @@
+Router.map(function () {
+  this.route(
+    'room'
+  , {'path'      : '/room/:room/'
+    ,'template'  : 'main_room'
+    ,'waitOn'    :
+        function() {
+          var params = this.params
+            ;
+          return Meteor.subscribe('characterList', params.room);
+        }
+    }
+  );
+});
+
 //房間template
 Template.main_room.helpers(
-  {'loaded'        :
-      function() {
-        return SCRIBE.room.ready() && SCRIBE.chapter.ready() && SCRIBE.characterName && SCRIBE.characterName.ready();
-      }
-  ,'title'         :
+  {'title'         :
       function() {
         var RouterParams = Session.get('RouterParams')
           , room         = DB.room.findOne(RouterParams.room)

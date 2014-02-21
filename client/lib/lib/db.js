@@ -9,4 +9,3 @@ DB =
   ,'map_grid'       : new Meteor.Collection('map_grid')
   ,'map_detail'     : new Meteor.Collection('map_detail')
   }
-console.log('db init');

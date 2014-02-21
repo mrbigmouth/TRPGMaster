@@ -28,6 +28,9 @@ TOOL =
           , room         = DB.room.findOne(RouterParams.room)
           , id           = Meteor.userId()
           ;
+        if (RouterParams.room === TRPG.public.id) {
+          return true;
+        }
         return (id && (id == TRPG.adm || (room && _.indexOf(room.adm, id) !== -1) ));
       }
   //判斷目前使用者是否為目前房間之玩家
@@ -37,6 +40,9 @@ TOOL =
           , room         = DB.room.findOne(RouterParams.room)
           , id           = Meteor.userId()
           ;
+        if (RouterParams.room === TRPG.public.id) {
+          return true;
+        }
         return ( id && (id == TRPG.adm || ( room && (_.indexOf(room.adm, id) !== -1 || _.indexOf(room.player, id) !== -1) ) ) );
       }
   //判斷一個物件的各key是否undefined

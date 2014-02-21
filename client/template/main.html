@@ -2,17 +2,22 @@
   <title>TRPG Master</title>
 </head>
 
-<body>
+<template name="layout">
   <div class="ui-layout-center" style="padding: 10px;" id="main">
-    {{#isolate}} {{renderPage}} {{/isolate}}
+    {{>yield}}
   </div>
-  <nav class="ui-layout-north navbar" style="padding: 10px;" id="nav">
-    {{> nav}}
-  </nav>
-  <aside class="ui-layout-south" id="message">
-    {{> message}}
-  </aside>
+  {{>yield 'north'}}
+  {{>yield 'south'}}
+  {{>yield 'west'}}
+  {{>yield 'east'}}
+  <!-- copy right declare -->
+  <footer style="display:none;"></footer>
+</template>
 
-  <footer style="display:none;">
-  </footer>
-</body>
+<template name="notFound">
+  404，找不到網址所請求的資源
+</template>
+
+<template name="loading">
+  載入中...
+</template>

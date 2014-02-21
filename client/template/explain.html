@@ -9,18 +9,16 @@
 </template>
 
 <template name="allApplyRoom">
-  {{#isolate}}
-    {{#if isAdm}}
-      <div class="apply">
-        <h3>申請中的團</h3>   
-          {{#each applying}}
-            <p>團名：{{name}}</p>
-            <p>申請者：{{getName adm}}</p>
-            <p>介紹：<br />{{{desc}}}</p>
-            <button class="btn btn-primary agree" data-id="{{_id}}">通過</button>
-            <button class="btn btn-info refuse" data-id="{{_id}}">否決</button>
-          {{/each}}
-      </div>
-    {{/if}}
-  {{/isolate}}
+  {{#if isAdm}}
+    <div class="apply">
+      <h3>申請中的團</h3>   
+        {{#each applying}}
+          <p>團名：{{name}}</p>
+          <p>申請者：{{getName adm}}</p>
+          <p>介紹：<br />{{{desc}}}</p>
+          <button class="btn btn-primary agree" data-id="{{_id}}">通過</button>
+          <button class="btn btn-info refuse" data-id="{{_id}}">否決</button>
+        {{/each}}
+    </div>
+  {{/if}}
 </template>

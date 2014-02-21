@@ -1,49 +1,3 @@
-Meteor.startup(function() {
-  //初始化內部layout
-  var messageLayout =
-    $('#message').layout(
-      {'applyDefaultStyles'      : false
-      ,'closable'                : true
-      ,'resizable'               : true
-      ,'slidable'                : false
-      ,'livePaneResizing'        : true
-      ,'spacing_closed'          : 0
-      ,'spacing_open'            : 2
-      ,'resizerTip'              : '調整大小'
-      ,'sliderTip'               : '調整大小'
-      ,'togglerTip_open'         : '關閉'
-      ,'north__size'             : 40
-      ,'north__initClosed'       : true
-      ,'south__size'             : 40
-      ,'south__initClosed'       : true
-      }
-    )
-
-  //事件直接綁定
-  $('#message')
-    .on('click', 'a.openFilter', function() {
-      if (messageLayout.state.north.isClosed) {
-        messageLayout.open('north');
-        $(this).attr('title', '關閉篩選欄');
-      }
-      else {
-        messageLayout.close('north');
-        $(this).attr('title', '開啟篩選欄');
-      }
-    })
-    .on('click', 'a.openChat', function() {
-      if (messageLayout.state.south.isClosed) {
-        messageLayout.open('south');
-        $(this).attr('title', '關閉發言欄');
-      }
-      else {
-        messageLayout.close('south');
-        $(this).attr('title', '開啟發言欄');
-      }
-    });
-});
-
-
 Template.message.helpers(
   //篩選列-所有房間
   {'allRooms' :
@@ -52,6 +6,52 @@ Template.message.helpers(
       }
   }
 )
+Template.message.rendered =
+    function() {
+      var $message = $('#message')
+        , messageLayout =
+            $message.layout(
+              {'applyDefaultStyles'      : false
+              ,'closable'                : true
+              ,'resizable'               : true
+              ,'slidable'                : false
+              ,'livePaneResizing'        : true
+              ,'spacing_closed'          : 0
+              ,'spacing_open'            : 2
+              ,'resizerTip'              : '調整大小'
+              ,'sliderTip'               : '調整大小'
+              ,'togglerTip_open'         : '關閉'
+              ,'north__size'             : 40
+              ,'north__initClosed'       : true
+              ,'south__size'             : 40
+              ,'south__initClosed'       : true
+              }
+            )
+        ;
+
+      //事件直接綁定
+      $message
+        .on('click', 'a.openFilter', function() {
+          if (messageLayout.state.north.isClosed) {
+            messageLayout.open('north');
+            $(this).attr('title', '關閉篩選欄');
+          }
+          else {
+            messageLayout.close('north');
+            $(this).attr('title', '開啟篩選欄');
+          }
+        })
+        .on('click', 'a.openChat', function() {
+          if (messageLayout.state.south.isClosed) {
+            messageLayout.open('south');
+            $(this).attr('title', '關閉發言欄');
+          }
+          else {
+            messageLayout.close('south');
+            $(this).attr('title', '開啟發言欄');
+          }
+        });
+    }
 
 
 //改變訊息列篩選條件
@@ -66,28 +66,6 @@ changeFilter =
         MsgDep.changed();
       }
     }
-Deps.autorun(function() {
-  MsgDep.depend();
-  //有新訊息時打開訊息列
-  var layout = $('body');
-  layout = layout.data('layout');
-  if (! layout || typeof layout.open !== 'function') {
-    return true;
-  }
-  DB.message_recent.find(MsgFilter).observeChanges(
-    {'added' :
-        function() {
-          switch (Meteor.Router.page()) {
-          case 'main_map':
-            break;
-          default        :
-            layout.open('south');
-            break;
-          }
-        }
-    }
-  );
-});
 
 //篩選訊息列
 Template.message.events(
@@ -99,9 +77,9 @@ Template.message.events(
           , types   = []
           ;
 
-        MsgFilter = {}
+        MsgFilter = {'time' : {'$gte' : Date.now() - 604800000}};
         if (room !== '') {
-          MsgFilter.room = parseInt(room, 10);
+          MsgFilter.room = room;
         }
         $type.each(function() {
           types.push( this.name );
@@ -112,14 +90,36 @@ Template.message.events(
   }
 )
 
-
 Template.message_list.helpers(
   //所有訊息
   {'allMsgs'     :
       function () {
         MsgDep.depend();
-        return DB.message_recent.find( MsgFilter, {'sort' : {'time' : 1} } ).fetch().slice(-50);
-//        return MsgCursor;//.fetch().slice(-50);
+        var cursor     = DB.message_all.find(MsgFilter, {'sort' : {'time' : 1} })
+          , scrollDown =
+              _.debounce(
+                function() {
+                  var $message = $('#message_list');
+                  $message.scrollTop( $message.prop('scrollHeight') );
+                }
+              , 100)
+          ;
+
+        cursor.observeChanges(
+          {'added' :
+              function(id, fields) {
+                var layout   = $('body').data('layout')
+                  , $message = $('#message_list')
+                  ;
+                //有新訊息時打開訊息列
+                if (layout && typeof layout.open === 'function') {
+                  layout.open('south');
+                }
+                scrollDown();
+              }
+          }
+        );
+        return cursor;
       }
   //時間中文化
   ,'timeChinese' : TOOL.convertTimeToChinese
@@ -187,23 +187,12 @@ Template.message_list.helpers(
       }
   }
 )
-//自動捲至底部
-var $message;
-Template.message_list.rendered =
-    function() {
-      var undefined;
-      if ($message !== undefined) {
-        $message.scrollTop( $message.prop('scrollHeight') );
-      }
-    };
-Meteor.startup(function() {
-  $message = $('#message_list');
-});
 
 //發言
 var toChat =
     function (e, ins) {
-      var $msg = $(ins.find('input.msg'))
+      var $msg  = $(ins.find('input.msg'))
+        , param = Session.get('RouterParams')
         , data
         , temp
         ;
@@ -212,10 +201,10 @@ var toChat =
         {'type' : 'chat'
         ,'msg'  : $msg.val()
         }
-      if (temp = Session.get('room')) {
-        data.room = temp._id;
-        if (temp = Session.get('chapter')) {
-          data.chapter = temp._id;
+      if (temp = param.room) {
+        data.room = temp;
+        if (temp = param.chapter) {
+          data.chapter = temp;
           if (temp = $(e.currentTarget).attr('data-section')) {
             data.section = temp;
           }

@@ -7,7 +7,7 @@ DB.record.allow(
         doc.time = Date.now();
         doc._id = (doc.time + '');
         doc.user = userID;
-        if (userID === TRPG.adm || doc.room === TRPG.public._id) {
+        if (userID === TRPG.adm || doc.room === TRPG.public.id) {
           result = true;
         }
         else {
@@ -119,19 +119,53 @@ DB.record.allow(
   }
 );
 
-Meteor.publish('chapter', function (rooms) {
-  return DB.record.find({'room': {'$in' : rooms} , 'chapter': {'$exists' : false}}, { 'sort': {'sort':1} });
-});
+Meteor.publish('chapter', function (room, chapter, sectionID) {
+  var secionFilter =
+      {'$or' :
+        //訂閱所有一週內更新的section
+        [ {'room'    : room
+          ,'chapter' : chapter
+          ,'section' : {'$exists' : false}
+          ,'time'    : {'$gte' : (Date.now() - 604800000)}
+          }
+        //指定的section
+        , {'_id' : sectionID}
+        ]
+      }
+    , section    = DB.record.find(secionFilter)
+    , sectionIds = _.pluck(section.fetch(), '_id')
+    ;
 
-Meteor.publish('section', function (room, chapter) {
+  //條件中新增已訂閱的section下的所有段落
+  secionFilter.$or.push(
+    {'room'    : room
+    ,'chapter' : chapter
+    ,'section' : {'$in' : sectionIds}
+    }
+  );
+  //移除第一條件，改為訂閱所有section
+  secionFilter.$or.shift();
+  secionFilter.$or.push(
+    {'room'    : room
+    ,'chapter' : chapter
+    ,'section' : {'$exists' : false}
+    }
+  );
+  
   return [
-    DB.record.find({'room':room, 'chapter': chapter, 'section' : {'$exists' : false}}, { 'sort': {'sort':1} })
-  , DB.message_all.find({'chapter' : chapter, 'type' : {'$in' : ['outside', 'dice']}})
+    DB.record.find(secionFilter)
+  //已訂閱章節下的所有擲骰跟場外訊息
+  , DB.message_all.find({'chapter' : chapter, 'section' : {'$in' : sectionIds}, 'type' : {'$in' : ['outside', 'dice']}})
   ];
 });
 
-Meteor.publish('paragraph', function (room, chapter, section) {
-  return DB.record.find({'room':room, 'chapter': chapter, 'section' : section}, { 'sort': {'sort':1} });
+
+Meteor.publish('section', function (section) {
+  console.log('subscribe section:' + section);
+  return [
+    DB.record.find(section)
+  , DB.message_all.find({'section' : section})
+  ];
 });
 
 /*

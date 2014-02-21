@@ -1,39 +1,37 @@
-var NeedResetRecent    = false
-  , ReSetMessageRecent =
-      function() {
-        NeedResetRecent = true;
-      }
-  ;
-Meteor.setInterval(
-  function() {
-    if (NeedResetRecent) {
-      var timeLimit = Date.now() - 604800000 //一星期
-      DB.message_recent.remove(
-        {}
-      , function() {
-          DB.message_all.find({'time' : {$gte : timeLimit } }).forEach(function(doc) {
-            DB.message_recent.insert(doc, _.identity);
-          });
-        }
-      );
-      NeedResetRecent = false;
-    }
-  }
-, 10000
-)
-DB.message_all.find().observeChanges(
-  {'added'   : ReSetMessageRecent
-  ,'changed' : ReSetMessageRecent
-  ,'removed' : ReSetMessageRecent
-  }
-)
-
 DB.message_all.allow(
   {'insert' :
       function(userID, doc) {
-        var result = false;
-        doc.time = Date.now();
-        doc._id = (doc.time + '');
+        var result  = false
+          , now     = Date.now()
+          , filter  = _.omit(doc, '_id', 'time')
+          , oldMessage
+          , timeLimit
+          ;
+
+        oldMessage = DB.message_all.findOne(filter, {'sort' : { 'time' : -1 }});
+        //若限時內相同使用者插入相同的內容 則拒絕插入，並更新該舊訊息
+        if (oldMessage) {
+          switch (doc.type) {
+          case 'chat'    :
+          case 'dice'    :
+          case 'outside' :
+          default :
+            //一分鐘內
+            timeLimit = 60000;
+            break;
+          case 'system'  :
+          case 'room'    :
+            //一小時內
+            timeLimit = 3600000;
+          }
+          if (now - oldMessage.time <= timeLimit) {
+            DB.message_all.update(oldMessage._id, { '$set' : {'time' : now} });
+            return false;
+          }
+        }
+
+        doc.time = now;
+        doc._id = (now + '');
         doc.user = userID;
         if (userID === TRPG.adm || doc.room === TRPG.public._id) {
           result = true;
@@ -46,7 +44,7 @@ DB.message_all.allow(
         }
         if (result) {
           if (doc.section) {
-            DB.record.update(doc.section, {'$set' : {'time' : doc.time } }, _.identity);
+            DB.record.update(doc.section, {'$set' : {'time' : now } }, _.identity);
           }
           return true;
         }
@@ -75,48 +73,3 @@ DB.message_all.allow(
       }
   }
 );
-
-Meteor.publish('message', function () {
-  var userID     = this.userID
-    , sender     = this
-    , observer   = {}
-    , obsMessage =
-          {'added' :
-              function(id, fields) {
-                sender.added('message_recent', id, fields);
-              }
-          ,'changed' :
-              function(id, fields) {
-                sender.changed('message_recent', id, fields);
-              }
-          ,'removed' :
-              function(id) {
-                sender.removed('message_recent', id);
-              }
-          }
-    ;
-  observer.room =
-      DB.room.find(
-        {'$or' :
-            [{'public' : true}
-            ,{'adm'    : userID}
-            ,{'player' : userID}
-            ]
-        }
-      ).observeChanges(
-        {'added'   :
-            function(id) {
-              observer[id] = DB.message_recent.find({'room': id}).observeChanges(obsMessage);
-            }
-        ,'removed' :
-            function(id) {
-              observer[id].stop();
-            }
-        }
-      )
-  sender.onStop(function () {
-    _.each(observer, function(obs, key) {
-      obs.stop();
-    });
-  });
-});

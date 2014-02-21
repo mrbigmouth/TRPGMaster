@@ -1,21 +1,94 @@
-Template.main_character.helpers(
-  {'title'          :
-      function() {
-        var RouterParams = Session.get('RouterParams')
-          , room         = DB.room.findOne(RouterParams.room)
-          , character    = DB.character.findOne(RouterParams.character)
-          ;
-        return room ? (room.name + '--' + character.name + ' 角色表') : '資料讀取中...';
+var CharData      = {}
+  , CharDep       = new Deps.Dependency()
+  , fieldTypeName =
+    {'description' : '額外詳述'
+    ,'dice'        : '擲骰資料'
+    ,'item'        : '物品欄'
+    ,'level'       : '等級資訊紀錄'
+    ,'name'        : '角色名稱'
+    ,'number'      : '角色數值'
+    ,'profile'     : '基本訊息'
+    ,'spell'       : '法術表'
+    }
+  , RuleSwtich =
+      {'PF'         : 'PF'
+      ,'3.5'        : 'PF'
+      ,'mrbigmouth' : 'PF'
       }
-  ,'characterData'  :
+  , updateMsg   =
+    function(type) {
+      var msg = fieldTypeName[type] || type;
+      DB.message_all.insert(
+        {'room'      : CharData.room
+        ,'type'      : 'room'
+        ,'msg'       : '更新了角色「' + CharData.name + '」的' + msg + '資料。'
+        ,'character' : CharData._id
+        }
+      )
+    }
+
+//自動更新角色
+Deps.autorun(function () {
+  var RouterParams = Session.get('RouterParams') || {}
+    , newCharData  = DB.character.findOne(RouterParams.character) || {}
+    ;
+  CharData = newCharData;
+});
+
+Router.map(function () {
+  this.route(
+    'character'
+  , {'path'      : '/character/:room/:character/'
+    ,'template'  : 'main_character'
+    ,'waitOn'    :
+        function() {
+          var _this  = this
+            , params = this.params
+            ;
+          return Meteor.subscribe('character', params.character);
+        }
+    }
+  );
+});
+
+Template.main_character.helpers(
+  {'character'      :
+      function() {
+        var RouterParams = Session.get('RouterParams');
+        return DB.character.findOne(RouterParams.character) || {};
+      }
+  ,'isRule'          :
+      function(data, rule) {
+        return (RuleSwtich[ data.rule ] === rule);
+      }
+  ,'characterRuleSwitch' :
       function() {
         var RouterParams = Session.get('RouterParams')
-          , character    = DB.character.findOne(RouterParams.character)
+          , data         = DB.character.findOne(RouterParams.character) || {}
           ;
-        return character;
+        
+        return UI.render(Template.foo)Template['main_character_' + (RuleSwtich[ data.rule ] || 'error') ]['render'](data);
       }
   }
 )
+
+Handlebars.registerHelper('characterRuleSwitch', function (character) {
+  switch (RuleSwtich[ character.rule ]) {
+  case 'PF':
+    return Template.character_profile_PF;
+  }
+});
+
+
+Template.main_character_PF.helpers(
+  {'title'          :
+      function(character) {
+        var room = DB.room.findOne(character.room) || {'name' : ''};
+        return room.name + '--' + character.name + ' 角色表';
+      }
+  }
+)
+
 
 
   //計算陣列中object value總合之函數
@@ -58,19 +131,10 @@ var sum        =
       });
       return index;
     }
-  //取得Session的角色資料(防止data dep)
-  , getCharData=
-    function() {
-      var RouterParams = Session.get('RouterParams')
-        , character    = DB.character.findOne(RouterParams.character)
-        ;
-      return character;
-    }
   //尋找特定name的角色數值總合
   , findNumber =
     function(name) {
-      var result = getCharData().number;
-      result = findName(result, name);
+      var result = findName(CharData.number, name);
       if (! result) {
         return 0;
       }
@@ -94,22 +158,13 @@ var sum        =
   //計算角色物品總重或總財富
   , sumItem    =
       function(what) {
-        var data = getCharData().item;
-        return _.reduce(data
+        return _.reduce(CharData.item
                        ,function(memo, v) {
-                          /*
-                          if (what === 'worth') {
-                            console.log(v[what], '*', v.amount, '=', v[what] * v.amount);
-                            console.log(memo + v[what] * v.amount * 1000);
-                          }
-                          */
                           return floatAdd(memo, floatMul(v[what], v.amount));
                         }
                        ,0
                        );
       }
-  //紀錄哪些欄位已開啟之object
-  , isOpen     = {}
   , intToBigA  = ['０', '１', '２', '３', '４', '５', '６', '７', '８', '９']
   , intToBig   =
       function(no) {
@@ -119,34 +174,19 @@ var sum        =
         });
         return result;
       }
+  , toggleContent =
+      function(e, ins) {
+        $(ins.firstNode).find('div.content').toggle();
+      }
   ;
 
-//profile
-Template.character_profile.helpers(
-  {'isHide' :
-      function() {
-        return ! isOpen.profile;
-      }
-  }
-)
-Template.character_profile.events(
+Template.character_profile_PF.events(
   //展開收起內容
-  {'click legend' :
-      function(e, ins) {
-        var $content = $(ins.firstNode).find('div.content');
-        if ($content.is(':hidden')) {
-          isOpen.profile = true;
-          $content.show();
-        }
-        else {
-          isOpen.profile = false;
-          $content.hide();
-        }
-      }
+  {'click legend' : toggleContent
   //新增基本訊息
   ,'click legend a' :
       function(e, ins) {
-        var profile = ins.data.profile
+        var profile = CharData.profile
           , newData = { 'value' : '' }
           , undefined
           ;
@@ -171,65 +211,53 @@ Template.character_profile.events(
           newData['class'] = '';
         }
 
-        DB.character.update(ins.data._id, {'$push' : {'profile' : newData }});
+        DB.character.update(CharData._id, {'$push' : {'profile' : newData }});
+        updateMsg('profile');
       }
   ,'click i.icon-remove' :
       function(e, ins) {
-        var profile = ins.data.profile
+        var profile = CharData.profile
           , name    = $(e.currentTarget).closest('div.eachProfile').attr('data-name')
           ;
 
         if (confirm('你確定要刪除角色的「' + name + '」基本訊息嗎？')) {
           profile = removeName(profile, name);
-          DB.character.update(ins.data._id, {'$set' : {'profile' : profile }});
+          DB.character.update(CharData._id, {'$set' : {'profile' : profile }});
+          updateMsg('profile');
         }
       }
   ,'change input' :
       function(e, ins) {
-        var profile = ins.data.profile
+        var profile = CharData.profile
           , name    = e.currentTarget.name
           , value   = e.currentTarget.value
           , index   = indexName(profile, name)
           , $set    = {}
           ;
         if (name === 'name') {
-          DB.character.update(ins.data._id, {'$set' : {'name' : value} });
+          DB.character.update(CharData._id, {'$set' : {'name' : value} });
         }
         else {
           $set['profile.' + index + '.value'] = value;
-          DB.character.update(ins.data._id, {'$set' : $set});
+          DB.character.update(CharData._id, {'$set' : $set});
         }
+        updateMsg('profile');
       }
   }
 )
 
 //number
-Template.character_number.helpers(
-  {'isHide'    :
-      function() {
-        return ! isOpen.number;
-      }
-  ,'getNumber' : findNumber
+Template.character_number_PF.helpers(
+  {'getNumber' : findNumber
   }
 )
-Template.character_number.events(
+Template.character_number_PF.events(
   //展開收起內容
-  {'click legend' :
-      function(e, ins) {
-        var $content = $(ins.firstNode).find('div.content');
-        if ($content.is(':hidden')) {
-          isOpen.number = true;
-          $content.show();
-        }
-        else {
-          isOpen.number = false;
-          $content.hide();
-        }
-      }
+  {'click legend'   : toggleContent
   //新增角色數值
   ,'click legend a' :
       function(e, ins) {
-        var number = ins.data.number
+        var number = CharData.number
           , newData = { 'value' : [] }
           , undefined
           ;
@@ -245,24 +273,26 @@ Template.character_number.events(
           return false;
         }
 
-        DB.character.update(ins.data._id, {'$push' : {'number' : newData }});
+        DB.character.update(CharData._id, {'$push' : {'number' : newData }});
+        updateMsg('「' + newData.name + '」角色數值');
       }
   //刪除一列數值
   ,'click label > i.icon-remove' :
       function(e, ins) {
-        var number  = ins.data.number
+        var number  = CharData.number
           , name    = $(e.currentTarget).closest('div.eachNumber').attr('data-name')
           ;
 
         if (confirm('你確定要刪除角色的「' + name + '」數值嗎？')) {
           number = removeName(number, name);
-          DB.character.update(ins.data._id, {'$set' : {'number' : number }});
+          DB.character.update(CharData._id, {'$set' : {'number' : number }});
+          updateMsg('「' + name + '」角色數值');
         }
       }
   //刪除一列數值中的某個加值
   ,'click div.eachNumber span.add-on > i.icon-remove' :
       function(e, ins) {
-        var number   = ins.data.number
+        var number   = CharData.number
           , $this    = $(e.currentTarget)
           , sumName  = $this.closest('div.eachNumber').attr('data-name')
           , sumIndex = indexName(number, sumName)
@@ -271,13 +301,14 @@ Template.character_number.events(
           ;
         if (confirm('你確定要刪除「' + sumName + '」角色數值的「' + name + '」加值嗎？')) {
           $set['number.' + sumIndex + '.value'] = removeName(number[sumIndex].value, name);
-          DB.character.update(ins.data._id, {'$set' : $set});
+          DB.character.update(CharData._id, {'$set' : $set});
+          updateMsg('「' + sumName + '」角色數值');
         }
       }
   //在一列數值中新增加值
   ,'click div.eachNumber strong' :
       function(e, ins) {
-        var number   = ins.data.number
+        var number   = CharData.number
           , $this    = $(e.currentTarget).closest('div.eachNumber')
           , sumName  = $this.attr('data-name')
           , sumIndex = indexName(number, sumName)
@@ -299,14 +330,15 @@ Template.character_number.events(
           delete newAdd.use;
           newAdd.value = 0;
         }
-
+        debugger;
         $push['number.' + sumIndex + '.value'] = newAdd;
-        DB.character.update(ins.data._id, {'$push' : $push});
+        DB.character.update(CharData._id, {'$push' : $push});
+        updateMsg('「' + sumName + '」角色數值');
       }
   //修改加值
   ,'change input' :
       function(e, ins) {
-        var number   = ins.data.number
+        var number   = CharData.number
           , $this    = $(e.currentTarget)
           , sumName  = $this.closest('div.eachNumber').attr('data-name')
           , sumIndex = indexName(number, sumName)
@@ -315,50 +347,28 @@ Template.character_number.events(
           , $set     = {}
           ;
         $set['number.' + sumIndex + '.value.' + index + '.value'] = parseInt(e.currentTarget.value, 10);
-        DB.character.update(ins.data._id, {'$set' : $set});
+        DB.character.update(CharData._id, {'$set' : $set});
+        updateMsg('「' + sumName + '」角色數值');
       }
   }
 )
 
 //dice
-Template.character_dice.helpers(
-  {'isHide'    :
-      function() {
-        return ! isOpen.dice;
-      }
-  ,'getNumber' : findNumber
+Template.character_dice_PF.helpers(
+  {'getNumber' : findNumber
   ,'getDice'   :
-      function(name) {
-        var RouterParams = Session.get('RouterParams')
-          , character    = DB.character.findOne(RouterParams.character)
-          ;
-        var result = character.dice;
-        result = findName(result, name);
-        if (! result) {
-          return 0;
-        }
-        return sum( result.value );
+      function(value) {
+        return sum( value );
       }
   }
 )
-Template.character_dice.events(
+Template.character_dice_PF.events(
   //展開收起內容
-  {'click legend' :
-      function(e, ins) {
-        var $content = $(ins.firstNode).find('div.content');
-        if ($content.is(':hidden')) {
-          isOpen.dice = true;
-          $content.show();
-        }
-        else {
-          isOpen.dice = false;
-          $content.hide();
-        }
-      }
+  {'click legend'   : toggleContent
   //新增擲骰資料
   ,'click legend a' :
       function(e, ins) {
-        var dice    = ins.data.dice
+        var dice    = CharData.dice
           , newData = { 'value' : [] }
           , undefined
           ;
@@ -374,24 +384,26 @@ Template.character_dice.events(
           return false;
         }
 
-        DB.character.update(ins.data._id, {'$push' : {'dice' : newData }});
+        DB.character.update(CharData._id, {'$push' : {'dice' : newData }});
+        updateMsg('「' + newData.name + '」擲骰資料');
       }
   //刪除一列擲骰資料
   ,'click label > i.icon-remove' :
       function(e, ins) {
-        var dice    = ins.data.dice
+        var dice    = CharData.dice
           , name    = $(e.currentTarget).closest('div.eachDice').attr('data-name')
           ;
 
         if (confirm('你確定要刪除角色的「' + name + '」擲骰資料嗎？')) {
           dice = removeName(dice, name);
-          DB.character.update(ins.data._id, {'$set' : {'dice' : dice }});
+          DB.character.update(CharData._id, {'$set' : {'dice' : dice }});
+          updateMsg('「' + name + '」擲骰資料');
         }
       }
   //刪除一列擲骰資料中的某個加值
   ,'click div.eachDice span.add-on > i.icon-remove' :
       function(e, ins) {
-        var dice     = ins.data.dice
+        var dice     = CharData.dice
           , $this    = $(e.currentTarget)
           , sumName  = $this.closest('div.eachDice').attr('data-name')
           , sumIndex = indexName(dice, sumName)
@@ -400,13 +412,14 @@ Template.character_dice.events(
           ;
         if (confirm('你確定要刪除「' + sumName + '」擲骰資料的「' + name + '」加值嗎？')) {
           $set['dice.' + sumIndex + '.value'] = removeName(dice[sumIndex].value, name);
-          DB.character.update(ins.data._id, {'$set' : $set});
+          DB.character.update(CharData._id, {'$set' : $set});
+          updateMsg('「' + sumName + '」擲骰資料');
         }
       }
   //在一列數值中新增加值
   ,'click div.eachDice strong' :
       function(e, ins) {
-        var dice     = ins.data.dice
+        var dice     = CharData.dice
           , $this    = $(e.currentTarget).closest('div.eachDice')
           , sumName  = $this.attr('data-name')
           , sumIndex = indexName(dice, sumName)
@@ -430,12 +443,13 @@ Template.character_dice.events(
         }
 
         $push['dice.' + sumIndex + '.value'] = newAdd;
-        DB.character.update(ins.data._id, {'$push' : $push});
+        DB.character.update(CharData._id, {'$push' : $push});
+        updateMsg('「' + sumName + '」擲骰資料');
       }
   //修改加值
   ,'change input' :
       function(e, ins) {
-        var dice     = ins.data.dice
+        var dice     = CharData.dice
           , $this    = $(e.currentTarget)
           , sumName  = $this.closest('div.eachDice').attr('data-name')
           , sumIndex = indexName(dice, sumName)
@@ -444,18 +458,19 @@ Template.character_dice.events(
           , $set     = {}
           ;
         $set['dice.' + sumIndex + '.value.' + index + '.value'] = parseInt(e.currentTarget.value, 10);
-        DB.character.update(ins.data._id, {'$set' : $set});
+        DB.character.update(CharData._id, {'$set' : $set});
+        updateMsg('「' + sumName + '」擲骰資料');
       }
   }
 )
 
 //item
-Template.character_item.helpers(
-  {'isHide'      :
-      function() {
-        return ! isOpen.item;
-      }
+Template.character_item_PF.helpers(
   //總負重
+  {'getDetail'   :
+      function(data) {
+        return data.detail;
+      }
   ,'totalWeight' :
       function() {
         return sumItem('weight');
@@ -467,20 +482,9 @@ Template.character_item.helpers(
       }
   }
 )
-Template.character_item.events(
+Template.character_item_PF.events(
   //展開收起內容
-  {'click legend' :
-      function(e, ins) {
-        var $content = $(ins.firstNode).find('div.content');
-        if ($content.is(':hidden')) {
-          isOpen.item = true;
-          $content.show();
-        }
-        else {
-          isOpen.item = false;
-          $content.hide();
-        }
-      }
+  {'click legend'   : toggleContent
   //新增物品
   ,'click legend a' :
       function(e, ins) {
@@ -497,7 +501,8 @@ Template.character_item.events(
             ,'weight' : 0
             ,'worth'  : 0
             }
-        DB.character.update(ins.data._id, {'$push' : {'item' : newData }});
+        DB.character.update(CharData._id, {'$push' : {'item' : newData }});
+        updateMsg('item');
       }
   //展開收起細節
   ,'click i.icon-plus, click i.icon-th-list' :
@@ -506,7 +511,7 @@ Template.character_item.events(
       }
   ,'click i.icon-remove' :
       function(e, ins) {
-        var item     = ins.data.item
+        var item     = CharData.item
           , $this    = $(e.currentTarget).closest('div.eachItem')
           , name     = $this.find('input.name').val()
           , $content = $this.closest('div.content')
@@ -515,12 +520,13 @@ Template.character_item.events(
 
         if (confirm('你確定要刪除角色的物品「' + name + '」嗎？')) {
           item.splice(index, 1);
-          DB.character.update(ins.data._id, {'$set' : {'item' : item }});
+          DB.character.update(CharData._id, {'$set' : {'item' : item }});
+          updateMsg('item');
         }
       }
   ,'change input, change textarea' :
       function(e, ins) {
-        var item     = ins.data.item
+        var item     = CharData.item
           , name     = e.currentTarget.name
           , value    = e.currentTarget.value
           , $this    = $(e.currentTarget).closest('div.eachItem')
@@ -536,41 +542,27 @@ Template.character_item.events(
           break;
         }
         $set['item.' + index + '.' + name] = value;
-        DB.character.update(ins.data._id, {'$set' : $set});
+        DB.character.update(CharData._id, {'$set' : $set});
+        updateMsg('item');
       }
   }
 )
 
 //spell
-Template.character_spell.helpers(
-  {'isHide'      :
-      function() {
-        return ! isOpen.spell;
-      }
-  ,'showValue'   :
+Template.character_spell_PF.helpers(
+  {'showValue'   :
       function(value) {
         return value ? value : '';
       }
   }
 )
-Template.character_spell.events(
+Template.character_spell_PF.events(
   //展開收起內容
-  {'click legend' :
-      function(e, ins) {
-        var $content = $(ins.firstNode).find('div.content');
-        if ($content.is(':hidden')) {
-          isOpen.spell = true;
-          $content.show();
-        }
-        else {
-          isOpen.spell = false;
-          $content.hide();
-        }
-      }
+  {'click legend'   : toggleContent
   //新增法術體系
   ,'click legend a' :
       function(e, ins) {
-        var spell   = ins.data.spell
+        var spell   = CharData.spell
           , newData = { 'circle' : [] }
           , undefined
           ;
@@ -585,18 +577,20 @@ Template.character_spell.events(
           alert('角色已經法術體系「' + newData.name +'」');
           return false;
         }
-        DB.character.update(ins.data._id, {'$push' : {'spell' : newData }});
+        DB.character.update(CharData._id, {'$push' : {'spell' : newData }});
+        updateMsg('spell');
       }
   //移除法術體系
   ,'click i.icon-remove.spell' :
       function(e, ins) {
-        var spell   = ins.data.spell
+        var spell   = CharData.spell
           , name    = $(e.currentTarget).closest('div.eachSpell').attr('data-name')
           ;
 
         if (confirm('你確定要刪除角色的「' + name + '」法術體系嗎？')) {
           spell = removeName(spell, name);
-          DB.character.update(ins.data._id, {'$set' : {'spell' : spell }});
+          DB.character.update(CharData._id, {'$set' : {'spell' : spell }});
+          updateMsg('spell');
         }
       }
   //新增法術等級
@@ -611,7 +605,7 @@ Template.character_spell.events(
         e.stopPropagation();
 
         $push['spell.' + index + '.circle'] = {'known' : [], 'slot' : []};
-        DB.character.update(ins.data._id, {'$push' : $push});
+        DB.character.update(CharData._id, {'$push' : $push});
       }
   //新增已知法術
   ,'click p.known i.icon-plus' :
@@ -626,14 +620,14 @@ Template.character_spell.events(
         //防止繼續往上觸發click
         e.stopPropagation();
 
-        $push['spell.' + spellIndex + '.circle.' + circleIndex + '.known'] = '';
-        DB.character.update(ins.data._id, {'$push' : $push});
+        $push['spell.' + spellIndex + '.circle.' + circleIndex + '.known'] = {'name' : '', 'detail' : ''};
+        DB.character.update(CharData._id, {'$push' : $push});
       }
   //編輯已知法術
   ,'change p.known input' :
       function(e, ins) {
         var value       = e.currentTarget.value
-          , spell       = ins.data.spell
+          , spell       = CharData.spell
           , $known      = $(e.currentTarget).closest('div')
           , $circle     = $known.closest('div.eachCircle')
           , $spell      = $circle.closest('div.eachSpell')
@@ -645,13 +639,13 @@ Template.character_spell.events(
           ;
 
         $set['spell.' + spellIndex + '.circle.' + circleIndex + '.known.' + knownIndex] = value;
-        DB.character.update(ins.data._id, {'$set' : $set});
+        DB.character.update(CharData._id, {'$set' : $set});
       }
   //移除已知法術
   ,'click p.known i.icon-remove' :
       function(e, ins) {
         var value       = e.currentTarget.value
-          , spell       = ins.data.spell
+          , spell       = CharData.spell
           , $known      = $(e.currentTarget).closest('div')
           , $circle     = $known.closest('div.eachCircle')
           , $spell      = $circle.closest('div.eachSpell')
@@ -673,7 +667,7 @@ Template.character_spell.events(
               if (data) {
                 data.splice(knownIndex, 1);
                 $set['spell.' + spellIndex + '.circle.' + circleIndex + '.known'] = data;
-                DB.character.update(ins.data._id, {'$set' : $set});
+                DB.character.update(CharData._id, {'$set' : $set});
               }
             }
           }
@@ -695,13 +689,13 @@ Template.character_spell.events(
         e.stopPropagation();
 
         $push['spell.' + spellIndex + '.circle.' + circleIndex + '.slot'] = {'name' : '', 'used' : false} ;
-        DB.character.update(ins.data._id, {'$push' : $push});
+        DB.character.update(CharData._id, {'$push' : $push});
       }
   //編輯法術格
   ,'change p.slot input' :
       function(e, ins) {
         var value       = e.currentTarget.value
-          , spell       = ins.data.spell
+          , spell       = CharData.spell
           , $slot       = $(e.currentTarget).closest('div')
           , $circle     = $slot.closest('div.eachCircle')
           , $spell      = $circle.closest('div.eachSpell')
@@ -713,12 +707,12 @@ Template.character_spell.events(
           ;
 
         $set['spell.' + spellIndex + '.circle.' + circleIndex + '.slot.' + slotIndex + '.name'] = value;
-        DB.character.update(ins.data._id, {'$set' : $set});
+        DB.character.update(CharData._id, {'$set' : $set});
       }
   //移除法術格
   ,'click p.slot i.icon-remove' :
       function(e, ins) {
-        var spell       = ins.data.spell
+        var spell       = CharData.spell
           , $slot       = $(e.currentTarget).closest('div')
           , $circle     = $slot.closest('div.eachCircle')
           , $spell      = $circle.closest('div.eachSpell')
@@ -741,7 +735,7 @@ Template.character_spell.events(
               data = data.slot;
               data.splice(slotIndex, 1);
               $set['spell.' + spellIndex + '.circle.' + circleIndex + '.slot'] = data;
-              DB.character.update(ins.data._id, {'$set' : $set});
+              DB.character.update(CharData._id, {'$set' : $set});
             }
           }
         }
@@ -749,7 +743,7 @@ Template.character_spell.events(
   //標示為已使用/未使用
   ,'click p.slot i.icon-ok' :
       function(e, ins) {
-        var spell       = ins.data.spell
+        var spell       = CharData.spell
           , $slot       = $(e.currentTarget).closest('div')
           , $circle     = $slot.closest('div.eachCircle')
           , $spell      = $circle.closest('div.eachSpell')
@@ -775,7 +769,7 @@ Template.character_spell.events(
                 if (data) {
                   data = ! data.used;
                   $set['spell.' + spellIndex + '.circle.' + circleIndex + '.slot.' + slotIndex + '.used'] = data;
-                  DB.character.update(ins.data._id, {'$set' : $set});
+                  DB.character.update(CharData._id, {'$set' : $set});
                 }
               }
             }
@@ -784,7 +778,7 @@ Template.character_spell.events(
       }
   }
 )
-Template.character_spell.rendered =
+Template.character_spell_PF.rendered =
     function() {
       if (! this.firstNode) {
         return true;
@@ -797,41 +791,25 @@ Template.character_spell.rendered =
     }
 
 //level
-Template.character_level.helpers(
-  {'isHide' :
-      function() {
-        return ! isOpen.level;
-      }
-  }
-)
-Template.character_level.events(
+Template.character_level_PF.events(
   //展開收起內容
-  {'click legend' :
-      function(e, ins) {
-        var $content = $(ins.firstNode).find('div.content');
-        if ($content.is(':hidden')) {
-          isOpen.level = true;
-          $content.show();
-        }
-        else {
-          isOpen.level = false;
-          $content.hide();
-        }
-      }
+  {'click legend'       : toggleContent
   //新增升級紀錄
   ,'click legend a.add' :
       function(e, ins) {
         //防止繼續往上觸發click
         e.stopPropagation();
 
-        DB.character.update(ins.data._id, {'$push' : {'level' : [] }});
+        DB.character.update(CharData._id, {'$push' : {'level' : [] }});
+        updateMsg('level');
       }
   //降級
   ,'click legend a.del' :
       function(e, ins) {
         //防止繼續往上觸發click
         e.stopPropagation();
-        DB.character.update(ins.data._id, {'$pop' : {'level' : 1 }});
+        DB.character.update(CharData._id, {'$pop' : {'level' : 1 }});
+        updateMsg('level');
       }
   //在一筆等級資料中新增能力資訊
   ,'click div.eachLevel a.addAbility' :
@@ -843,7 +821,8 @@ Template.character_level.events(
           , data     = { 'name' : '', 'detail' : ''}
           ;
         $push['level.' + index] = data;
-        DB.character.update(ins.data._id, {'$push' : $push});
+        DB.character.update(CharData._id, {'$push' : $push});
+        updateMsg('level');
       }
   //展開能力細節
   ,'click div.eachAbility i.icon-plus, click div.eachAbility i.icon-th-list' :
@@ -860,11 +839,12 @@ Template.character_level.events(
           , $content = $level.closest('div.content')
           , lIndex   = $content.find('div.eachLevel').index($level)
           , $set     = {}
-          , data     = ins.data.level[lIndex];
+          , data     = CharData.level[lIndex];
           ;
         data.splice(aIndex, 1);
         $set['level.' + lIndex] = data;
-        DB.character.update(ins.data._id, {'$set' : $set});
+        DB.character.update(CharData._id, {'$set' : $set});
+        updateMsg('level');
       }
   //修改能力名稱
   ,'change input' :
@@ -878,7 +858,8 @@ Template.character_level.events(
           , $set     = {}
           ;
         $set['level.' + lIndex + '.' + aIndex + '.name'] = value;
-        DB.character.update(ins.data._id, {'$set' : $set});
+        DB.character.update(CharData._id, {'$set' : $set});
+        updateMsg('level');
       }
   //修改能力細節
   ,'change textarea' :
@@ -892,7 +873,8 @@ Template.character_level.events(
           , $set     = {}
           ;
         $set['level.' + lIndex + '.' + aIndex + '.detail'] = value;
-        DB.character.update(ins.data._id, {'$set' : $set});
+        DB.character.update(CharData._id, {'$set' : $set});
+        updateMsg('level');
       }
   }
 );
@@ -907,27 +889,9 @@ Template.character_level.rendered =
     }
 
 //description
-Template.character_description.helpers(
-  {'isHide' :
-      function() {
-        return ! isOpen.description;
-      }
-  }
-)
-Template.character_description.events(
+Template.character_description_PF.events(
   //展開收起內容
-  {'click legend' :
-      function(e, ins) {
-        var $content = $(ins.firstNode).find('div.content');
-        if ($content.is(':hidden')) {
-          isOpen.description = true;
-          $content.show();
-        }
-        else {
-          isOpen.description = false;
-          $content.hide();
-        }
-      }
+  {'click legend'   : toggleContent
   //新增額外詳述
   ,'click legend a' :
       function(e, ins) {
@@ -947,17 +911,19 @@ Template.character_description.events(
           return false;
         }
 
-        DB.character.update(ins.data._id, {'$push' : {'description' : newData }});
+        DB.character.update(CharData._id, {'$push' : {'description' : newData }});
+        updateMsg('description');
       }
   ,'click i.icon-remove' :
       function(e, ins) {
-        var description = ins.data.description
+        var description = CharData.description
           , name        = $(e.currentTarget).closest('div.eachDescription').attr('data-name')
           ;
 
         if (confirm('你確定要刪除角色的「' + name + '」額外詳述嗎？')) {
           description = removeName(description, name);
-          DB.character.update(ins.data._id, {'$set' : {'description' : description }});
+          DB.character.update(CharData._id, {'$set' : {'description' : description }});
+          updateMsg('description');
         }
       }
   ,'change textarea' :
@@ -968,7 +934,8 @@ Template.character_description.events(
           , $set        = {}
           ;
         $set['description.' + index + '.value'] = value;
-        DB.character.update(ins.data._id, {'$set' : $set});
+        DB.character.update(CharData._id, {'$set' : $set});
+        updateMsg('description');
       }
   }
 )

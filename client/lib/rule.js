@@ -599,11 +599,8 @@ RULE =
               ,'worth'  : 0.01
               }
             ]
-        ,'spell'       :
-            []
-        ,'level'       :
-            [ []
-            ]
+        ,'spell'       : []
+        ,'level'       : [ [] ]
         ,'description' :
             [ {'name'  : '背景'
               ,'value' : ''

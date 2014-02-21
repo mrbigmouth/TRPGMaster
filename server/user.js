@@ -18,22 +18,6 @@ Meteor.methods(
   }
 )
 
-//所有使用者資料
-Meteor.publish('users', function () {
-  var userID = this.userID;
-
-  if (TRPG.adm === userID) {
-    return Meteor.users.find();
-  }
-  throw new Meteor.Error(401, 'Unauthorized', 'Unauthorized');
-});
-
-//所有使用者暱稱
-Meteor.publish('userNick', function () {
-  return Meteor.users.find({}, {'fields': {'profile.nick' : 1}});
-});
-
-
 //Meteor.loginAs admin 登入指定使用者
 Accounts.registerLoginHandler(function(data) {
   var token

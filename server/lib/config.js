@@ -1,6 +1,6 @@
 TRPG =
   {'public'  :
-      {'_id'        : 1367153330780
+      {'id'        : '1367153330780'
       }
   ,'adm'     : 'Hstk4c7N953EnBQns'
   ,'getUserNick' :
@@ -33,4 +33,3 @@ TRPG =
           }
       }
   }
-console.log('config init');

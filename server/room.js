@@ -25,25 +25,6 @@ DB.room.allow(
   }
 );
 
-Meteor.publish('room', function () {
-  var userID = this.userID
-    , canSee
-    ;
-  if (userID === TRPG.adm) {
-    return DB.room.find();
-  }
-  else {
-    canSee =
-        {'$or'    :
-            [{'public' : true}
-            ,{'adm'    : userID}
-            ,{'player' : userID}
-            ]
-        }
-    return DB.room.find(canSee);
-  }
-});
-
 
 
 //申請加入

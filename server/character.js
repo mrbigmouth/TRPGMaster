@@ -1,14 +1,3 @@
-var FiledName =
-    {'description' : '額外詳述'
-    ,'dice'        : '擲骰資料'
-    ,'item'        : '物品欄'
-    ,'level'       : '等級資訊紀錄'
-    ,'name'        : '角色名稱'
-    ,'number'      : '角色數值'
-    ,'profile'     : '基本訊息'
-    ,'spell'       : '法術表'
-    }
-
 DB.character.allow(
   {'insert' :
       function(userID, doc) {
@@ -29,8 +18,6 @@ DB.character.allow(
       function(userID, doc, fieldNames) {
         var result = false
           , room
-          , changed
-          , now
           ;
         if (userID === TRPG.adm || doc.adm.indexOf(userID) !== -1 ) {
           result = true;
@@ -43,22 +30,6 @@ DB.character.allow(
         }
         if (result) {
           DB.character.update(doc._id, {'$set' : {'time' : Date.now()} });
-          if (doc.status >= 1) {
-            changed = _.compact(_.map(fieldNames, function(v) { return FiledName[v]; }));
-            if (changed.length > 0) {
-              now = Date.now();
-              DB.message_all.insert(
-                {'user'      : userID
-                ,'room'      : doc.room
-                ,'type'      : 'room'
-                ,'msg'       : '更新了角色「' + doc.name + '」的' + changed.join('、') + '資料。'
-                ,'character' : doc._id
-                ,'time'      : now
-                ,'_id'       : (now + '')
-                }
-              )
-            }
-          }
           return true;
         }
         return false;
@@ -77,13 +48,15 @@ DB.character.allow(
   }
 );
 
-Meteor.publish('characterName', function (room) {
+Meteor.publish('characterList', function (room) {
   return DB.character.find({'room' : room}, {'fields' : {'name' : 1, 'room' : 1}});
 });
 
+
+
 Meteor.publish('character', function (id) {
   var publisher = this
-    , userID    = publisher.userID
+    , userID    = publisher.userId
     , canSee    =
         {'$or'    :
             [{'public' : true}
@@ -120,6 +93,53 @@ Meteor.publish('character', function (id) {
   return;
 });
 
-Meteor.publish('myCharacter', function () {
-  return DB.character.find({'adm' : this.userId });
+
+DB.character.find({'spell' : {'$exists' : true}}).forEach(function(doc) {
+  var spell = doc.spell;
+  _.each(spell, function(spellClass) {
+    _.each(spellClass.circle, function(circle) {
+      var newKnown = [];
+      _.each(circle.known, function(spellName) {
+        var spell = {'name' : spellName, 'detail' : ''};
+        newKnown.push(spell);
+      });
+      circle.known = newKnown;
+    });
+  });
+  DB.character.update(doc._id, {'$set' : {'spell' : spell} });
 });
+
+/*
+DB.character.find({'spell' : {'$exists' : true}}).forEach(function(doc) {
+  var known = []
+    , slot  = []
+    ;
+  _.each(doc.spell, function(spellClass) {
+    var thisClassKnown = {}
+      , thisClassSlot  = {}
+      ;
+    thisClassKnown.name = thisClassSlot.name = spellClass.name;
+    thisClassKnown.list = [];
+    thisClassSlot.list = [];
+    _.each(spellClass.circle, function(circle) {
+      var thisCircleKnown = []
+        , thisCircleSlot  = []
+        ;
+      _.each(circle.known, function(spellName) {
+        var spell = {'name' : spellName, 'detail' : ''};
+        thisCircleKnown.push(spell);
+      });
+      _.each(circle.slot, function(slotData) {
+        thisCircleSlot.push(slotData);
+      });
+      thisClassKnown.list.push(thisCircleKnown);
+      thisClassSlot.list.push(thisCircleSlot);
+    });
+    known.push(thisClassKnown);
+    slot.push(thisClassSlot);
+  });
+  doc.known = known;
+  doc.slot = slot;
+  DB.character.update(doc._id, {'$set' : {'known' : known, 'slot' : slot}, '$unset' : {'spell' : ''}});
+});
+*/

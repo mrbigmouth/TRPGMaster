@@ -21,8 +21,9 @@ callDice =
 Template.main_explain.events(
   {'click a.dice' :
       function() {
+        var params  = Session.get('RouterParams') || {};
         callDice(
-          {'room'    : Session.get('room')
+          {'room'    : params.room
           }
         )
       }
@@ -33,10 +34,13 @@ Template.main_explain.events(
 Template.chapter_section.events(
   {'click a.dice' :
       function(e, ins) {
+        var params  = Session.get('RouterParams') || {}
+          , room    = DB.room.findOne(params.room)
+          , chapter = DB.record.findOne(params.chapter)
+          , section = DB.record.findOne(ins.data._id)
+          ;
         callDice(
-          {'room'    : Session.get('room')
-          ,'chapter' : Session.get('chapter')
-          ,'section' : DB.record.findOne(ins.firstNode.id) 
+          {'title'    : '擲骰--' + room.name + '--' + chapter.name + '--' + section.name
           }
         )
       }
@@ -125,8 +129,10 @@ Meteor.startup(function() {
         }
       )
   Deps.autorun(function () {
-    var room  = Session.get('room')
-      , $find = { 'adm' : Meteor.userId() }
+    var params    = Session.get('RouterParams') || {}
+      , room      = DB.room.findOne(params.room)
+      , $find     = { 'adm' : Meteor.userId() }
+      , character
       ;
     if (room) {
       $find.room = room._id;
@@ -288,19 +294,11 @@ Template.dice_form.helpers(
         var data  = $dice && $dice.data('diceData')
           , title = '擲骰'
           ;
+
         if (! data) {
-          return title;
+          return '擲骰';
         }
-        if (data.room) {
-          title += ' -- ' + data.room.name;
-          if (data.chapter) {
-            title += ' -- ' + data.chapter.name;
-            if (data.section) {
-              title += ' -- ' + data.section.name;
-            }
-          }
-        }
-        return title;
+        return data.title;
       }
   }
 )

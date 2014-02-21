@@ -1,37 +1,42 @@
 <template name="main_character">
   <form action="javascript:" class="form-inline" id="character">
-    {{#with characterData}}
-      <h3>{{title}}</h3>
-      <input type="hidden" name="id" value="{{_id}}" />
-      {{> character_profile}}
-      {{> character_number}}
-      {{> character_dice}}
-      {{> character_item}}
-      {{> character_spell}}
-      {{> character_level}}
-      {{> character_description}}
-    {{/with}}
+    {{characterRuleSwitch}}
   </form>
 </template>
 
+<template name="main_character_PF">
+  <form action="javascript:" class="form-inline" id="character">
+    <h3>{{title this}}</h3>
+    <input type="hidden" name="id" value="{{this._id}}" />
+    {{> character_profile_PF this}}
+    {{> character_number_PF this.number}}
+    {{> character_dice_PF this.dice}}
+    {{> character_item_PF this.item}}
+    {{> character_spell_PF this.spell}}
+    {{> character_level_PF this.level}}
+    {{> character_description_PF this.description}}
+  </form>
+</template>
 
-<template name="character_profile">
+<template name="character_profile_error">
+  角色資料錯誤，無法讀取：錯誤的角色規則。
+</template>
+
+<template name="character_profile_PF">
   <fieldset class="profile">
     <legend>　　基本訊息：<a href="javascript:" class="add pull-right">新增基本訊息</a></legend>
-    <div class="content"{{#if isHide}} style="display:none;"{{/if}}>
+    <div class="content" style="display:none;">
       <div class="eachProfile">
         <div class="input-prepend">
           <label class="add-on">角色名稱</label>
-          {{#isolate}}<input class="span5" type="text" name="name" value="{{name}}">{{/isolate}}
+          <input class="span5" type="text" name="name" value="{{this.name}}">
         </div>
       </div>
-      {{#each profile}}
-        <div class="eachProfile" data-name="{{name}}">
+      {{#each this.profile}}
+        <div class="eachProfile" data-name="{{this.name}}">
           <div class="input-prepend input-append">
-            <label class="add-on">{{name}}</label>
-            {{#isolate}}
-              <input class="{{class}}" type="text" name="{{name}}" value="{{value}}">
-            {{/isolate}}
+            <label class="add-on">{{this.name}}</label>
+            <input class="{{this.class}}" type="text" name="{{this.name}}" value="{{this.value}}">
             <span class="add-on"><i class="icon-remove" title="刪除此訊息"></i></span>
           </div>
         </div>
@@ -40,21 +45,23 @@
   </fieldset>
 </template>
 
-<template name="character_number">
+<template name="character_number_PF">
   <fieldset class="number">
     <legend>　　角色數值：<a href="javascript:" class="add pull-right">新增角色數值</a></legend>
-    <div class="content"{{#if isHide}} style="display:none;"{{/if}}>
-      {{#each number}}
-        <div class="eachNumber" data-name="{{name}}">
-          <label class="span2"><i class="icon-remove pull-left" title="刪除此列"></i>{{name}}</label>
-          {{#isolate}}<input class="input-mini sum" type="text" disabled="disabled" value="{{getNumber name}}" />{{/isolate}}
+    <div class="content" style="display:none;">
+      {{#each this}}
+        <div class="eachNumber" data-name="{{this.name}}">
+          <label class="span2"><i class="icon-remove pull-left" title="刪除此列"></i>{{this.name}}</label>
+          <input class="input-mini sum" type="text" disabled="disabled" value="{{getNumber this.name}}" />
           <strong>＝</strong>
-            {{#each value}}
+            {{#each this.value}}
               <div class="input-prepend">
                 <span class="add-on"><i class="icon-remove" title="刪除此值"></i></span>
-                {{#isolate}}
-                  <input class="input-mini each" type="number" name="{{name}}" title="{{name}}"{{#if use}} disabled="disabled" value="{{getNumber use}}"{{else}} value="{{value}}"{{/if}} />
-                {{/isolate}}
+                {{#if this.use}}
+                  <input class="input-mini each" type="number" name="{{this.name}}" title="{{this.name}}" disabled="disabled" value="{{getNumber this.use}}" />
+                {{else}}
+                  <input class="input-mini each" type="number" name="{{this.name}}" title="{{this.name}}" value="{{this.value}}" />
+                {{/if}}
               </div>
               <strong>＋</strong>
             {{/each}}
@@ -64,23 +71,23 @@
   </fieldset>
 </template>
 
-<template name="character_dice">
+<template name="character_dice_PF">
   <fieldset class="dice">
     <legend>　　擲骰資料：<a href="javascript:" class="add pull-right">新增擲骰資料</a></legend>
-    <div class="content"{{#if isHide}} style="display:none;"{{/if}}>
-      {{#each dice}}
-        <div class="eachDice" data-name="{{name}}">
-          <label class="span2"><i class="icon-remove pull-left" title="刪除此列"></i>{{name}}</label>
-          {{#isolate}}
-            <input class="input-mini sum" type="text" disabled="disabled" value="{{getDice name}}" />
-          {{/isolate}}
+    <div class="content" style="display:none;">
+      {{#each this}}
+        <div class="eachDice" data-name="{{this.name}}">
+          <label class="span2"><i class="icon-remove pull-left" title="刪除此列"></i>{{this.name}}</label>
+          <input class="input-mini sum" type="text" disabled="disabled" value="{{getDice this.value}}" />
           <strong>＝</strong>
-            {{#each value}}
+            {{#each this.value}}
               <div class="input-prepend">
                 <span class="add-on"><i class="icon-remove" title="刪除此值"></i></span>
-                {{#isolate}}
-                  <input class="input-mini" type="number" name="{{name}}" title="{{name}}"{{#if use}} disabled="disabled" value="{{getNumber use}}"{{else}} value="{{value}}"{{/if}} />
-                {{/isolate}}
+                  {{#if this.use}}
+                    <input class="input-mini" type="number" name="{{this.name}}" title="{{this.name}}" disabled="disabled" value="{{getNumber this.use}}" />
+                  {{else}}
+                    <input class="input-mini" type="number" name="{{this.name}}" title="{{this.name}}" value="{{this.value}}" />
+                  {{/if}}
               </div>
               <strong>＋</strong>
             {{/each}}
@@ -90,25 +97,23 @@
   </fieldset>
 </template>
 
-<template name="character_item">
+<template name="character_item_PF">
   <fieldset class="item">
     <legend>　　物品欄：<a href="javascript:" class="add pull-right">新增物品資料</a></legend>
-    <div class="content"{{#if isHide}} style="display:none;"{{/if}}>
+    <div class="content" style="display:none;">
       <p>
         <span class="span6 center">物品名稱</span>
         <span class="span1 center">數量</span>
         <span class="span1 center">單位重量</span>
         <span class="span2 center">單位價值</span>
       </p>
-      {{#each item}}
+      {{#each this}}
         <div class="eachItem">
           <div class="input-prepend input-append span6">
             <span class="add-on"><i class="icon-remove pull-left" title="刪除此物品"></i></span>
-            {{#isolate}}
-              <input type="text" class="span5 name" name="name" value="{{name}}" />
-            {{/isolate}}
+            <input type="text" class="span5 name" name="name" value="{{this.name}}" />
             <span class="add-on">
-              {{#if detail}}
+              {{#if this.detail}}
                 <i class="icon-th-list" title="檢視物品細節"></i>
               {{else}}
                 <i class="icon-plus" title="添加物品細節"></i>
@@ -116,65 +121,55 @@
             </span>
           </div>
           <span class="span1">
-            {{#isolate}}
-              <input type="number" class="span1 amount" name="amount" value="{{amount}}" />
-            {{/isolate}}
+            <input type="number" class="span1 amount" name="amount" value="{{this.amount}}" />
           </span>
           <span class="span1">
-            {{#isolate}}
-              <input type="number" class="span1 weight" name="weight" value="{{weight}}" />
-            {{/isolate}}
+            <input type="number" class="span1 weight" name="weight" value="{{this.weight}}" />
           </span>
           <span class="span2">
-            {{#isolate}}
-              <input type="number" class="span2 worth" name="worth" value="{{worth}}" />
-            {{/isolate}}
+            <input type="number" class="span2 worth" name="worth" value="{{this.worth}}" />
           </span>
           <div class="detail" style="display:none;">
-            <textarea name="detail" class="span9">{{{detail}}}</textarea>
+            <textarea name="detail" class="span9">{{getDetail this}}</textarea>
           </div>
         </div>
       {{/each}}
       <p>
-        {{#isolate}}
-          <span class="span2 offset6">角色總負重：{{totalWeight}}</span>
-          <span class="span2">角色總財富：{{totalWorth}}</span>
-        {{/isolate}}
+        <span class="span2 offset6">角色總負重：{{totalWeight}}</span>
+        <span class="span2">角色總財富：{{totalWorth}}</span>
       </p>
     </div>
   </fieldset>
 </template>
 
-<template name="character_spell">
+<template name="character_spell_PF">
   <fieldset class="spell">
     <legend>　　法術表：<a href="javascript:" class="add pull-right">新增法術體系</a></legend>
-    <div class="content"{{#if isHide}} style="display:none;"{{/if}}>
-      {{#each spell}}
-        <div class="eachSpell" data-name="{{name}}">
-          <h4><i class="icon-remove spell" title="刪除此法術體系"></i>「{{name}}」法術<a href="javascript:" class="add pull-right">新增法術等級</a></h4>
-          {{#each circle}}
+    <div class="content" style="display:none;">
+      {{#each this}}
+        <div class="eachSpell" data-name="{{this.name}}">
+          <h4><i class="icon-remove spell" title="刪除此法術體系"></i>「{{this.name}}」法術<a href="javascript:" class="add pull-right">新增法術等級</a></h4>
+          {{#each this.circle}}
             <div class="eachCircle">
               <p>法術等級<strong></strong>：</p>
               <p class="known">
                 <i class="icon-plus"></i>已知法術：
-                {{#each known}}
+                {{#each this.known}}
+                  <p>
                   <div class="input-prepend">
                     <span class="add-on"><i class="icon-remove" title="刪除此法術"></i></span>
-                    {{#isolate}}
                       <input class="span2" type="text" value="{{showValue this}}" />
-                    {{/isolate}}
                   </div>
+                  </p>
                 {{/each}}
               </p>
               <p class="slot">
                 <i class="icon-plus"></i>法術格：
-                {{#each slot}}
+                {{#each this.slot}}
                   <div class="input-prepend input-append">
                     <span class="add-on"><i class="icon-remove" title="刪除此法術"></i></span>
-                    {{#isolate}}
-                      <input class="span2" type="text" value="{{showValue name}}"{{#if used}} readonly="readonly"{{/if}} />
-                    {{/isolate}}
-                    <span class="add-on"><i class="icon-ok" title="標示為{{#if used}}未使用{{else}}已使用{{/if}}"></i></span>
+                      <input class="span2" type="text" value="{{showValue name}}" {{#if this.used}} readonly="readonly"{{/if}} />
+                    <span class="add-on"><i class="icon-ok" title="標示為{{#if this.used}}未使用{{else}}已使用{{/if}}"></i></span>
                   </div>
                 {{/each}}
               </p>
@@ -186,22 +181,20 @@
   </fieldset>
 </template>
 
-<template name="character_level">
+<template name="character_level_PF">
   <fieldset class="level">
     <legend>　　等級資訊記錄：<a href="javascript:" class="del pull-right">移除一級</a><a href="javascript:" class="add pull-right">新增一級</a></legend>
-    <div class="content"{{#if isHide}} style="display:none;"{{/if}}>
-      {{#each level}}
+    <div class="content" style="display:none;">
+      {{#each this}}
         <div class="eachLevel">
           <p><strong></strong>　　<a href="javascript:" class="addAbility">添加能力</a></p>
           {{#each this}}
             <div class="eachAbility">
               <div class="input-prepend input-append span9">
                 <span class="add-on"><i class="icon-remove" title="刪除此項"></i></span>
-                {{#isolate}}
-                  <input type="text" class="span7 name" name="name" value="{{name}}" />
-                {{/isolate}}
+                <input type="text" class="span7 name" name="name" value="{{this.name}}" />
                 <span class="add-on">
-                  {{#if detail}}
+                  {{#if this.detail}}
                     <i class="icon-th-list" title="檢視能力細節"></i>
                   {{else}}
                     <i class="icon-plus" title="添加能力細節"></i>
@@ -209,9 +202,7 @@
                 </span>
               </div>
               <br />
-              {{#isolate}}
-                <textarea class="offset2 span9" style="display:none;">{{{detail}}}</textarea>
-              {{/isolate}}
+              <textarea class="offset2 span9" style="display:none;">{{{this.detail}}}</textarea>
             </div>
           {{/each}}
         </div>
@@ -223,14 +214,12 @@
 <template name="character_description">
   <fieldset class="description">
     <legend>　　額外詳述：<a href="javascript:" class="add pull-right">新增額外詳述</a></legend>
-    <div class="content"{{#if isHide}} style="display:none;"{{/if}}>
+    <div class="content" style="display:none;">
       {{#each description}}
-        <div class="eachDescription" data-name="{{name}}">
-          <p><i class="icon-remove" title="刪除此列"></i><strong>{{name}}</strong></p>
+        <div class="eachDescription" data-name="{{this.name}}">
+          <p><i class="icon-remove" title="刪除此列"></i><strong>{{this.name}}</strong></p>
           <p>
-            {{#isolate}}
-              <textarea name="{{name}}" style="width:100%">{{{value}}}</textarea>
-            {{/isolate}}
+            <textarea name="{{this.name}}" style="width:100%">{{{this.value}}}</textarea>
           </p>
         </div>
       {{/each}}

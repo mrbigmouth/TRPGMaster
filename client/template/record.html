@@ -1,34 +1,30 @@
-<template name="main_chapter">
-  {{#if isLoading}}
-    載入中...
-  {{else}}
-    <div id="main_chapter">
-      <header>
-        <h1>{{#isolate}} {{title}} {{/isolate}}</h1>
-      </header>
-      <nav>
-        <ul class="breadcrumb">
-          {{#each allSection}}
-            <li><a href="#{{_id}}">{{#isolate}} {{name}} {{/isolate}}</a> <span class="divider">/</span></li>
-          {{/each}}
-            <li><a href="javascript:" class="addSection">新增一節</a></li>
-        </ul>
-      </nav>
-      {{#each allSection}}
-        {{#isolate}}
-          {{> chapter_section}}
-        {{/isolate}}
-      {{/each}}
-    </div>
-  {{/if}}
+<template name="main_record">
+  <div id="main_record">
+    <header>
+      <h1> {{title}} </h1>
+    </header>
+    <nav>
+      <ul class="breadcrumb">
+        {{#each allSection}}
+          <li><a href="javascript:" class="goSection" data-id="{{this._id}}"> {{this.name}} </a> <span class="divider">/</span></li>
+        {{/each}}
+          <li><a href="javascript:" class="addSection">新增一節</a></li>
+      </ul>
+    </nav>
+    {{#each allSection}}
+      {{> chapter_section}}
+    {{/each}}
+  </div>
 </template>
 
 <template name="chapter_section">
   <section id="{{_id}}">
     <header>
       <h2>
-        {{name}}
-        {{#if isAdm}}<i class="icon-pencil" title="編輯標題"></i>{{/if}}
+        {{this.name}}
+        {{#if isAdm}}
+          <i class="icon-pencil" title="編輯標題"></i>
+        {{/if}}
         <i class="icon-eye-open" title="選取全段落"></i>
         <i class="icon-eye-close" title="全段落取消選取"></i>
         <i class="icon-filter" title="選取特定時間之後更新的段落"></i>
@@ -39,14 +35,16 @@
         {{> chapter_section_paragraph}}
       {{/each}}
       <aside class="tool">
-        <a href="javascript:" class="addParagraph" title="此章節尾端添加內容">添加</a>
+        {{#if isAdm}}
+          <a href="javascript:" class="addParagraph" title="此章節尾端添加內容">添加</a>
+        {{/if}}
         <a href="javascript:" class="outside" title="場外發言，並紀錄在本章節尾部">場外</a>
         <a href="javascript:" class="wait" title="指示系統此章節正等待某位玩家或DM行動">等待</a>
-        <a href="javascript:" class="dice" title="進行擲骰，並紀錄在本章節尾部">擲骰</a>
-        {{#isolate}}
-          <a href="{{mapLink}}" class="map" title="查看與本章節有關的戰場地圖" target="_blank">地圖</a>
-        {{/isolate}}
-        <a href="#main_chapter">回到頁首</a>
+        {{#if isPlayer}}
+          <a href="javascript:" class="dice" title="進行擲骰，並紀錄在本章節尾部">擲骰</a>
+        {{/if}}
+        <a href="{{mapLink}}" class="map" title="查看與本章節有關的戰場地圖" target="_blank">地圖</a>
+        <a href="javascript:" class="top">回到頁首</a>
       </aside>
       <aside class="outside">
         {{> chapter_section_outside}}
@@ -57,11 +55,11 @@
 </template>
 
 <template name="chapter_section_paragraph">
-  <article data-id="{{_id}}">
+  <article data-id="{{this._id}}">
     <header class="tool">
       <div class="notEditing">
         <a href="javascript:" class="blur" title="取消選取此段落">取消選取</a>
-        {{#if _id}}
+        {{#if this._id}}
           <a href="javascript:" class="addBefore" title="在此段落前新增段落">插入</a>
           <a href="javascript:" class="addAfter" title="在此段落後新增段落">接續</a>
         {{/if}}
@@ -76,15 +74,11 @@
       </div>
     </header>
     <div class="paragraph">
-      {{#isolate}}
       <p>{{#if content}}{{{content}}}{{else}}本節目前無內容。{{/if}}</p>
-      {{/isolate}}
     </div>
-    {{#if time}}
+    {{#if this.time}}
       <footer>
-        {{#isolate}}
-        <time>本文最後由 {{getNick user}} 於 {{timeChinese time}} 編輯</time>
-        {{/isolate}}
+        <time>本文最後由 {{getNick this.user}} 於 {{timeChinese this.time}} 編輯</time>
       </footer>
     {{/if}}
   </article>
@@ -94,17 +88,17 @@
   <ul>
     {{#each allOutside}}
       <li>
-        <span>{{timeChinese _id}}</span>
+        <span>{{timeChinese this._id}}</span>
         {{#if typeOutside}}
-          <span>{{getNick user}}：</span>
+          <span>{{getNick this.user}}：</span>
           <span>{{msg}}</span>
         {{/if}}
         {{#if typeDice}}
-          {{#if result}}
-            {{#if isHide}}
+          {{#if this.result}}
+            {{#if this.isHide}}
               <span class="badge badge-inverse">暗骰</span>
             {{/if}}
-            <span>{{getNick user}}為{{who}}擲了一次{{name}}骰{{#if note}}（{{note}}）{{/if}} {{diceResult}}</span>
+            <span>{{getNick this.user}}為{{this.who}}擲了一次{{this.name}}骰{{#if this.note}}（{{this.note}}）{{/if}} {{this.diceResult}}</span>
           {{else}}
             <span>擲骰結果載入中...</span>
           {{/if}}
