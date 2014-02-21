@@ -41,6 +41,9 @@ Template.chapter_section.events(
           ;
         callDice(
           {'title'    : '擲骰--' + room.name + '--' + chapter.name + '--' + section.name
+          ,'room'     : room._id
+          ,'chapter'  : chapter._id
+          ,'section'  : section._id
           }
         )
       }
@@ -308,9 +311,9 @@ Template.dice_form.events(
   {'click button.btn-primary' :
       function() {
         var data     = $dice.data('diceData')
-          , room     = data.room._id
-          , chapter  = data.chapter ? data.chapter._id : undefined
-          , section  = data.section ? data.section._id : undefined
+          , room     = data.room
+          , chapter  = data.chapter
+          , section  = data.section
           , $input   = $dice.find('input')
           , who      = $input.filter('.who').val()
           , isHide   = $input.filter('.isHide').prop('checked')
@@ -321,7 +324,8 @@ Template.dice_form.events(
           , saveDices
           , undefined
           ;
-
+        console.log(data);
+          debugger;
         $dice.find('div.eachDice').each(function() {
           var $input = $(this).find('input')
             , d      =
