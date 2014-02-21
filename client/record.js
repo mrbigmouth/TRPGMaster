@@ -374,8 +374,11 @@ Template.chapter_section_paragraph.events(
         if ($(e.currentTarget).hasClass('addAfter')) {
           sort += 1;
         }
-        $all.slice(sort).each(function() {
-          DB.record.update($(this).attr('data-id'), {'$inc' : {'sort' : 1} });
+        newData.sort = sort;
+        $all.each(function(i) {
+          if (i >= sort) {
+            DB.record.update($(this).attr('data-id'), {'$inc' : {'sort' : 1} });
+          }
         });
         newData.sort = sort;
         DB.record.insert(newData);
