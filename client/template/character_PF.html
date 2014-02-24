@@ -1,0 +1,221 @@
+<template name="main_character_PF">
+  <form action="javascript:" class="form-inline" id="character_PF">
+    <h3>{{title}}</h3>
+    {{> character_PF_profile characterID}}
+    {{> character_PF_number characterID}}
+  </form>
+</template>
+
+<template name="character_PF_profile">
+  <fieldset class="profile">
+    <legend>　　基本訊息：<a href="javascript:" class="add pull-right">新增基本訊息</a></legend>
+    <div class="content" style="display:none;">
+      <div class="eachProfile">
+        <div class="input-prepend">
+          <label class="add-on">角色名稱</label>
+          <input class="span5" type="text" name="name" value="{{characterName this}}">
+        </div>
+      </div>
+      {{#each profileList this}}
+        <div class="eachProfile" data-name="{{this.name}}">
+          <div class="input-prepend input-append">
+            <label class="add-on">{{this.name}}</label>
+            <input class="{{this.class}}" type="text" value="{{this.value}}" />
+            <span class="add-on"><i class="icon-remove" title="刪除此訊息"></i></span>
+          </div>
+        </div>
+      {{/each}}
+    </div>
+  </fieldset>
+</template>
+
+<template name="character_PF_number">
+  <fieldset class="number">
+    <legend>　　角色數值：<a href="javascript:" class="add pull-right">新增角色數值</a></legend>
+    <div class="content" style="display:none;">
+      {{#each numberList this}}
+        {{>character_PF_number_row}}
+      {{/each}}
+    </div>
+  </fieldset>
+</template>
+
+<template name="character_PF_number_row">
+  <div class="eachNumber">
+    <label class="span2"><i class="icon-remove pull-left" title="刪除此列"></i>{{this.name}}</label>
+    <input class="input-mini sum" type="text" disabled="disabled" value="{{findNumber this._id}}" />
+    <strong>＝</strong>
+      {{#each this.value}}
+        <div class="input-prepend">
+          <span class="add-on"><i class="icon-remove" title="刪除此值"></i></span>
+          {{#if this.use}}
+            <input class="input-mini each" type="number" name="{{this.name}}" title="{{this.name}}" disabled="disabled" value="{{findNameNumber this.use}}" />
+          {{else}}
+            <input class="input-mini each" type="number" name="{{this.name}}" title="{{this.name}}" value="{{this.value}}" />
+          {{/if}}
+        </div>
+        <strong>＋</strong>
+      {{/each}}
+  </div>
+</template>
+
+<template name="character_dice_PF">
+  <fieldset class="dice">
+    <legend>　　擲骰資料：<a href="javascript:" class="add pull-right">新增擲骰資料</a></legend>
+    <div class="content" style="display:none;">
+      {{#each this}}
+        <div class="eachDice" data-name="{{this.name}}">
+          <label class="span2"><i class="icon-remove pull-left" title="刪除此列"></i>{{this.name}}</label>
+          <input class="input-mini sum" type="text" disabled="disabled" value="{{getDice this.value}}" />
+          <strong>＝</strong>
+            {{#each this.value}}
+              <div class="input-prepend">
+                <span class="add-on"><i class="icon-remove" title="刪除此值"></i></span>
+                  {{#if this.use}}
+                    <input class="input-mini" type="number" name="{{this.name}}" title="{{this.name}}" disabled="disabled" value="{{getNumber this.use}}" />
+                  {{else}}
+                    <input class="input-mini" type="number" name="{{this.name}}" title="{{this.name}}" value="{{this.value}}" />
+                  {{/if}}
+              </div>
+              <strong>＋</strong>
+            {{/each}}
+        </div>
+      {{/each}}
+    </div>
+  </fieldset>
+</template>
+
+<template name="character_item_PF">
+  <fieldset class="item">
+    <legend>　　物品欄：<a href="javascript:" class="add pull-right">新增物品資料</a></legend>
+    <div class="content" style="display:none;">
+      <p>
+        <span class="span6 center">物品名稱</span>
+        <span class="span1 center">數量</span>
+        <span class="span1 center">單位重量</span>
+        <span class="span2 center">單位價值</span>
+      </p>
+      {{#each this}}
+        <div class="eachItem">
+          <div class="input-prepend input-append span6">
+            <span class="add-on"><i class="icon-remove pull-left" title="刪除此物品"></i></span>
+            <input type="text" class="span5 name" name="name" value="{{this.name}}" />
+            <span class="add-on">
+              {{#if this.detail}}
+                <i class="icon-th-list" title="檢視物品細節"></i>
+              {{else}}
+                <i class="icon-plus" title="添加物品細節"></i>
+              {{/if}}
+            </span>
+          </div>
+          <span class="span1">
+            <input type="number" class="span1 amount" name="amount" value="{{this.amount}}" />
+          </span>
+          <span class="span1">
+            <input type="number" class="span1 weight" name="weight" value="{{this.weight}}" />
+          </span>
+          <span class="span2">
+            <input type="number" class="span2 worth" name="worth" value="{{this.worth}}" />
+          </span>
+          <div class="detail" style="display:none;">
+            <textarea name="detail" class="span9">{{getDetail this}}</textarea>
+          </div>
+        </div>
+      {{/each}}
+      <p>
+        <span class="span2 offset6">角色總負重：{{totalWeight}}</span>
+        <span class="span2">角色總財富：{{totalWorth}}</span>
+      </p>
+    </div>
+  </fieldset>
+</template>
+
+<template name="character_spell_PF">
+  <fieldset class="spell">
+    <legend>　　法術表：<a href="javascript:" class="add pull-right">新增法術體系</a></legend>
+    <div class="content" style="display:none;">
+      {{#each this}}
+        <div class="eachSpell" data-name="{{this.name}}">
+          <h4><i class="icon-remove spell" title="刪除此法術體系"></i>「{{this.name}}」法術<a href="javascript:" class="add pull-right">新增法術等級</a></h4>
+          {{#each this.circle}}
+            <div class="eachCircle">
+              <p>法術等級<strong></strong>：</p>
+              <p class="known">
+                <i class="icon-plus"></i>已知法術：
+                {{#each this.known}}
+                  <p>
+                  <div class="input-prepend">
+                    <span class="add-on"><i class="icon-remove" title="刪除此法術"></i></span>
+                      <input class="span9" type="text" value="{{this.name}}" />
+                  </div>
+                  </p>
+                {{/each}}
+              </p>
+              <p class="slot">
+                <i class="icon-plus"></i>法術格：
+                {{#each this.slot}}
+                  <div class="input-prepend input-append">
+                    <span class="add-on"><i class="icon-remove" title="刪除此法術"></i></span>
+                    {{#if this.used}}
+                      <input class="span2" type="text" value="{{this.name}}" readonly="readonly" />
+                      <span class="add-on"><i class="icon-ok" title="標示為未使用"></i></span>
+                    {{else}}
+                      <input class="span2" type="text" value="{{this.name}}" />
+                      <span class="add-on"><i class="icon-ok" title="標示為已使用"></i></span>
+                    {{/if}}
+                  </div>
+                {{/each}}
+              </p>
+            </div>
+          {{/each}}
+        </div>
+      {{/each}}
+    </div>
+  </fieldset>
+</template>
+
+<template name="character_level_PF">
+  <fieldset class="level">
+    <legend>　　等級資訊記錄：<a href="javascript:" class="del pull-right">移除一級</a><a href="javascript:" class="add pull-right">新增一級</a></legend>
+    <div class="content" style="display:none;">
+      {{#each this}}
+        <div class="eachLevel">
+          <p><strong></strong>　　<a href="javascript:" class="addAbility">添加能力</a></p>
+          {{#each this}}
+            <div class="eachAbility">
+              <div class="input-prepend input-append span9">
+                <span class="add-on"><i class="icon-remove" title="刪除此項"></i></span>
+                <input type="text" class="span7 name" name="name" value="{{this.name}}" />
+                <span class="add-on">
+                  {{#if this.detail}}
+                    <i class="icon-th-list" title="檢視能力細節"></i>
+                  {{else}}
+                    <i class="icon-plus" title="添加能力細節"></i>
+                  {{/if}}
+                </span>
+              </div>
+              <br />
+              <textarea class="offset2 span9" style="display:none;">{{{this.detail}}}</textarea>
+            </div>
+          {{/each}}
+        </div>
+      {{/each}}
+    </div>
+  </fieldset>
+</template>
+
+<template name="character_description_PF">
+  <fieldset class="description">
+    <legend>　　額外詳述：<a href="javascript:" class="add pull-right">新增額外詳述</a></legend>
+    <div class="content" style="display:none;">
+      {{#each description}}
+        <div class="eachDescription" data-name="{{this.name}}">
+          <p><i class="icon-remove" title="刪除此列"></i><strong>{{this.name}}</strong></p>
+          <p>
+            <textarea name="{{this.name}}" style="width:100%">{{{this.value}}}</textarea>
+          </p>
+        </div>
+      {{/each}}
+    </div>
+  </fieldset>
+</template>

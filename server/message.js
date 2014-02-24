@@ -1,17 +1,13 @@
-DB.message_all.allow(
-  {'insert' :
-      function(userID, doc) {
-        var result  = false
-          , now     = Date.now()
-          , filter  = _.omit(doc, '_id', 'time')
-          , oldMessage
+Meteor.methods(
+  {'updateOldMSG' :
+      function (message) {
+        var filter    = _.omit(message, '_id', 'time')
+          , now       = Date.now()
           , timeLimit
           ;
-
         oldMessage = DB.message_all.findOne(filter, {'sort' : { 'time' : -1 }});
-        //若限時內相同使用者插入相同的內容 則拒絕插入，並更新該舊訊息
         if (oldMessage) {
-          switch (doc.type) {
+          switch (message.type) {
           case 'chat'    :
           case 'dice'    :
           case 'outside' :
@@ -26,12 +22,30 @@ DB.message_all.allow(
           }
           if (now - oldMessage.time <= timeLimit) {
             DB.message_all.update(oldMessage._id, { '$set' : {'time' : now} });
-            return false;
+            return true;
           }
+          return false;
+        }
+      }
+  }
+);
+
+DB.message_all.allow(
+  {'insert' :
+      function(userID, doc) {
+        var result  = false
+          , now     = Date.now()
+          , filter  = _.omit(doc, '_id', 'time')
+          , oldMessage
+          , timeLimit
+          ;
+
+        if (Meteor.call('updateOldMSG', doc) === true) {
+          return false;
         }
 
-        doc.time = now;
         doc._id = (now + '');
+        doc.time = now;
         doc.user = userID;
         if (userID === TRPG.adm || doc.room === TRPG.public._id) {
           result = true;
