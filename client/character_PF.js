@@ -1,28 +1,3 @@
-var CharData      = {}
-  , fieldTypeName =
-    {'description' : '額外詳述'
-    ,'dice'        : '擲骰資料'
-    ,'item'        : '物品欄'
-    ,'level'       : '等級資訊紀錄'
-    ,'name'        : '角色名稱'
-    ,'number'      : '角色數值'
-    ,'profile'     : '基本訊息'
-    ,'known'       : '已知法術'
-    ,'slot'        : '準備法術'
-    }
-  , updateMSG =
-    function(characterID, msg1, msg2) {
-      var character = DB.character.findOne(characterID) || {};
-      DB.message_all.insert(
-        {'room'      : character.room
-        ,'type'      : 'room'
-        ,'msg'       : msg1 + '角色「' + character.name + '」' + msg2 + '。'
-        ,'character' : character._id
-        }
-      )
-    }
-  ;
-
 Template.main_character_PF.helpers(
   {'title'          :
       function(character) {
@@ -49,45 +24,19 @@ Template.main_character_PF.helpers(
 
   //計算陣列中object value總合之函數
   //計算一物件陣列裡物件之屬性(或use參照值)總合
-var sum        =
-    function(data) {
-      return _.reduce(data
-                     ,function(memo, v) {
-                        var undefined;
-                        if (v.value !== undefined) {
-                          return v.value + memo;
-                        }
-                        if (v.use !== undefined) {
-                          return (findNumberName(v.use) || 0) + memo;
-                        }
-                        return memo ;
-                      }
-                     ,0
-                     );
-    }
-  //尋找並回傳特定name object之函數
-  , findName   =
-    function(data, name) {
-      return _.find(data, function(v){ return v.name === name; });
-    }
-  //移除並傳回陣列中特定name object之函數
-  , removeName =
-    function(data, name) {
-      return _.reject(data, function(v){ return v.name === name; });
-    }
-  //定位某name object之index
-  , indexName  =
-    function(data, name) {
-      var index = -1;
-      _.some(data, function(v, k) {
-        if (v.name === name) {
-          index = k;
-          return true;
-        }
-      });
-      return index;
-    }
+
   //尋找特定name的角色數值總合
+var updateMSG =
+    function(characterID, msg1, msg2) {
+      var character = DB.character.findOne(characterID) || {};
+      DB.message_all.insert(
+        {'room'      : character.room
+        ,'type'      : 'room'
+        ,'msg'       : msg1 + '角色「' + character.name + '」' + msg2 + '。'
+        ,'character' : character._id
+        }
+      )
+    }
   , findNameNumber =
     function(name) {
       var useFilter =
@@ -104,7 +53,7 @@ var sum        =
     function(id) {
       var number = DB.character_data.find(id, {fields: {'character' : 1, 'value': 1}}).fetch()[0];
       if (! number) {
-        console.log(id);
+        console.log('cant find number' + id);
         return 0;
       }
       return  _.reduce( number.value
@@ -146,13 +95,24 @@ var sum        =
       }
   //計算角色物品總重或總財富
   , sumItem    =
-      function(what) {
-        return _.reduce(CharData.item
+      function(character, what) {
+        var useFilter =
+              {'character' : character
+              ,'type'      : 'item'
+              }
+          , fields    = { 'amount' : 1 }
+          ;
+        fields[ what ] = 1;
+        return _.reduce(DB.character_data.find(useFilter, {'fields' : fields}).fetch()
                        ,function(memo, v) {
                           return floatAdd(memo, floatMul(v[what], v.amount));
                         }
                        ,0
                        );
+      }
+  , trim       =
+      function(data) {
+        return (data.trim ? data.trim() : data.replace(/^\s+|\s+$/gm,''));
       }
   , intToBigA  = ['０', '１', '２', '３', '４', '５', '６', '７', '８', '９']
   , intToBig   =
@@ -162,6 +122,18 @@ var sum        =
           result += intToBigA[ v ];
         });
         return result;
+      }
+  , getMaxLevel =
+      function(character) {
+        var allLevel  = DB.character_data.find({'character' : character, 'type' : 'level'}, {'fields' : {'level' : 1}}).fetch()
+          , maxLevel
+          ;
+        if (allLevel.length > 0) {
+          return _.max(allLevel, function(d) { return d.level; }).level;
+        }
+        else {
+          return 0;
+        }
       }
   , toggleContent =
       function(e, ins) {
@@ -297,12 +269,12 @@ Template.character_PF_number.events(
   }
 )
 
-Template.character_PF_number_row.helpers(
+Template.character_PF_number_list.helpers(
   {'findNumber'     : findNumber
   ,'findNameNumber' : findNameNumber
   }
 )
-Template.character_PF_number_row.events(
+Template.character_PF_number_list.events(
   //刪除一列數值
   {'click label > i.icon-remove' :
       function(e, ins) {
@@ -341,7 +313,7 @@ Template.character_PF_number_row.events(
           return false;
         }
 
-        if (confirm('你確定要刪除「' + sumName + '」數值的「' + name + '」加值嗎？')) {
+        if (confirm('你確定要刪除「' + sumName + '」數值中的「' + name + '」加值嗎？')) {
           value.splice(index, 1);
           DB.character_data.update(
             data._id
@@ -367,7 +339,7 @@ Template.character_PF_number_row.events(
         if (! newAdd.name) {
           return false;
         }
-        if (_.find(data, function(obj) { return obj.name === newAdd.name; }) !== undefined) {
+        if (_.find(value, function(obj) { return obj.name === newAdd.name; }) !== undefined) {
           alert('此列數值已存在名稱為「' + newAdd.name + '」的加值！');
           return false;
         }
@@ -381,7 +353,7 @@ Template.character_PF_number_row.events(
           data._id
         , {'$set' : {'value' : value}}
         , function() {
-            updateMSG(data.character, '更新了', '的「' + data.name + '」數值的「' + newAdd.name + '」加值');
+            updateMSG(data.character, '新增了', '的「' + data.name + '」數值的「' + newAdd.name + '」加值');
           }
         );
       }
@@ -425,26 +397,29 @@ Template.character_PF_number_row.events(
   }
 )
 
-
 //dice
-Template.character_dice_PF.helpers(
-  {'getNumber' : findNumber
-  ,'getDice'   :
-      function(value) {
-        return sum( value );
+Template.character_PF_dice.helpers(
+  {'diceList'     :
+      function(id) {
+        return DB.character_data.find({'character' : id, 'type' : 'dice'}, {'sort' : {'sort' : 1}});
       }
   }
 )
-Template.character_dice_PF.events(
+Template.character_PF_dice.events(
   //展開收起內容
   {'click legend'   : toggleContent
   //新增擲骰資料
   ,'click legend a' :
       function(e, ins) {
-        var dice    = CharData.dice
-          , newData = { 'value' : [] }
+        var character = ins.data
+          , newData   =
+            {'character' : character
+            ,'type'      : 'dice'
+            ,'value'     : []
+            }
           , undefined
           ;
+
         //防止繼續往上觸發click
         e.stopPropagation();
 
@@ -452,52 +427,81 @@ Template.character_dice_PF.events(
         if (! newData.name) {
           return false;
         }
-        if (findName(dice, newData.name) !== undefined) {
+        if (DB.character_data.findOne({'character' : character, 'type' : 'dice', 'name' : newData.name}) !== undefined) {
           alert('角色已經存在擲骰資料「' + newData.name +'」');
           return false;
         }
 
-        DB.character.update(CharData._id, {'$push' : {'dice' : newData }});
-        updateMsg('「' + newData.name + '」擲骰資料');
+        DB.character_data.insert(newData, function() {
+          updateMSG(character, '新增了', '的「' + newData.name + '」擲骰資料');
+        });
       }
-  //刪除一列擲骰資料
-  ,'click label > i.icon-remove' :
-      function(e, ins) {
-        var dice    = CharData.dice
-          , name    = $(e.currentTarget).closest('div.eachDice').attr('data-name')
-          ;
+  }
+)
 
-        if (confirm('你確定要刪除角色的「' + name + '」擲骰資料嗎？')) {
-          dice = removeName(dice, name);
-          DB.character.update(CharData._id, {'$set' : {'dice' : dice }});
-          updateMsg('「' + name + '」擲骰資料');
+Template.character_PF_dice_list.helpers(
+  {'getDice'        : findNumber
+  ,'findNameNumber' : findNameNumber
+  }
+)
+Template.character_PF_dice_list.events(
+  //刪除一列數值
+  {'click label > i.icon-remove' :
+      function(e, ins) {
+        var data = ins.data;
+        if (confirm('你確定要刪除角色的「' + data.name + '」擲骰資料嗎？')) {
+          DB.character_data.remove(data._id, function() {
+            updateMSG(data.character, '刪除了', '的「' + data.name + '」擲骰資料');
+          });
         }
       }
-  //刪除一列擲骰資料中的某個加值
+  //刪除一列數值中的某個加值
   ,'click div.eachDice span.add-on > i.icon-remove' :
       function(e, ins) {
-        var dice     = CharData.dice
-          , $this    = $(e.currentTarget)
-          , sumName  = $this.closest('div.eachDice').attr('data-name')
-          , sumIndex = indexName(dice, sumName)
-          , name     = $this.closest('div.input-prepend').find('input').attr('name')
-          , $set     = {}
+        var data     = ins.data
+          , sumName  = data.name
+          , value    = data.value
+          , name     = this.name
+          , index
+          , undefined
           ;
-        if (confirm('你確定要刪除「' + sumName + '」擲骰資料的「' + name + '」加值嗎？')) {
-          $set['dice.' + sumIndex + '.value'] = removeName(dice[sumIndex].value, name);
-          DB.character.update(CharData._id, {'$set' : $set});
-          updateMsg('「' + sumName + '」擲骰資料');
+
+        _.find(
+          value
+        , function(obj, key) {
+            if (obj.name === name) {
+              index = key;
+              return true; 
+            }
+            else {
+              return false;
+            }
+          }
+        )
+        if (index === undefined) {
+          console.log('error: can\'t find name:[' + name + '] index!');
+          return false;
+        }
+
+        if (confirm('你確定要刪除「' + sumName + '」擲骰中的「' + name + '」加值嗎？')) {
+          value.splice(index, 1);
+          DB.character_data.update(
+            data._id
+          , {'$set' : {'value' : value}}
+          , function() {
+              updateMSG(data.character, '刪除了', '的「' + sumName + '」擲骰的「' + name + '」加值');
+            }
+          );
         }
       }
   //在一列數值中新增加值
   ,'click div.eachDice strong' :
       function(e, ins) {
-        var dice     = CharData.dice
-          , $this    = $(e.currentTarget).closest('div.eachDice')
-          , sumName  = $this.attr('data-name')
-          , sumIndex = indexName(dice, sumName)
+        var data     = ins.data
+          , value    = data.value
+          , $this    = $(e.currentTarget)
+          , sumName  = data.name
           , newAdd   = {}
-          , $push    = {}
           , undefined
           ;
 
@@ -505,8 +509,8 @@ Template.character_dice_PF.events(
         if (! newAdd.name) {
           return false;
         }
-        if (findName(dice[sumIndex].value, newAdd.name) !== undefined) {
-          alert('此列擲骰中已存在名稱為「' + newAdd.name + '」的加值！');
+        if (_.find(value, function(obj) { return obj.name === newAdd.name; }) !== undefined) {
+          alert('此列數值已存在名稱為「' + newAdd.name + '」的加值！');
           return false;
         }
         newAdd.use = window.prompt('請輸入此加值所參照的角色數值名稱\n（或不輸入，手動修改數值）：');
@@ -514,115 +518,149 @@ Template.character_dice_PF.events(
           delete newAdd.use;
           newAdd.value = 0;
         }
-
-        $push['dice.' + sumIndex + '.value'] = newAdd;
-        DB.character.update(CharData._id, {'$push' : $push});
-        updateMsg('「' + sumName + '」擲骰資料');
+        value.push(newAdd);
+        DB.character_data.update(
+          data._id
+        , {'$set' : {'value' : value}}
+        , function() {
+            updateMSG(data.character, '新增了', '的「' + data.name + '」擲骰的「' + newAdd.name + '」加值');
+          }
+        );
       }
   //修改加值
   ,'change input' :
       function(e, ins) {
-        var dice     = CharData.dice
-          , $this    = $(e.currentTarget)
-          , sumName  = $this.closest('div.eachDice').attr('data-name')
-          , sumIndex = indexName(dice, sumName)
-          , name     = e.currentTarget.name
-          , index    = indexName(dice[sumIndex].value, name)
-          , $set     = {}
+        var data     = ins.data
+          , sumName  = data.name
+          , value    = data.value
+          , name     = this.name
+          , index
+          , undefined
           ;
-        $set['dice.' + sumIndex + '.value.' + index + '.value'] = parseInt(e.currentTarget.value, 10);
-        DB.character.update(CharData._id, {'$set' : $set});
-        updateMsg('「' + sumName + '」擲骰資料');
+
+        _.find(
+          value
+        , function(obj, key) {
+            if (obj.name === name) {
+              index = key;
+              return true; 
+            }
+            else {
+              return false;
+            }
+          }
+        )
+        if (index === undefined) {
+          console.log('error: can\'t find name:[' + name + '] index!');
+          return false;
+        }
+
+        value[index].value = parseInt(e.currentTarget.value, 10);
+        DB.character_data.update(
+          data._id
+        , {'$set' : {'value' : value}}
+        , function() {
+            updateMSG(data.character, '修改了', '的「' + sumName + '」擲骰的「' + name + '」加值');
+          }
+        );
       }
   }
 )
 
 //item
-Template.character_item_PF.helpers(
-  //總負重
-  {'getDetail'   :
-      function(data) {
-        return data.detail;
+Template.character_PF_item.helpers(
+  {'itemList'    :
+      function(id) {
+        return DB.character_data.find({'character' : id, 'type' : 'item'}, {'sort' : {'sort' : 1}});
       }
-  ,'totalWeight' :
-      function() {
-        return sumItem('weight');
-      }
-  //總財富
-  ,'totalWorth'  :
-      function() {
-        return sumItem('worth');
-      }
+  //計算角色總財富或總負重
+  ,'sumItem' : sumItem
   }
 )
-Template.character_item_PF.events(
+Template.character_PF_item.events(
   //展開收起內容
   {'click legend'   : toggleContent
   //新增物品
   ,'click legend a' :
       function(e, ins) {
-        var newData
-          , undefined
+        var character = ins.data
+          , newData   =
+            {'character' : character
+            ,'type'      : 'item'
+            ,'name'      : ''
+            ,'detail'    : ''
+            ,'amount'    : 1
+            ,'weight'    : 0
+            ,'worth'     : 0
+            }
           ;
+
         //防止繼續往上觸發click
         e.stopPropagation();
 
-        newData =
-            {'name'   : ''
-            ,'detail' : ''
-            ,'amount' : 1
-            ,'weight' : 0
-            ,'worth'  : 0
-            }
-        DB.character.update(CharData._id, {'$push' : {'item' : newData }});
-        updateMsg('item');
+        DB.character_data.insert(newData, function() {
+          updateMSG(character, '新增了', '的物品項目');
+        });
       }
+  }
+)
+Template.character_PF_item_list.helpers(
+  {'trim' : trim
+  }
+)
+Template.character_PF_item_list.events(
   //展開收起細節
-  ,'click i.icon-plus, click i.icon-th-list' :
-      function(e, ins) {
+  {'click i.icon-plus, click i.icon-th-list' :
+      function(e) {
         $(e.currentTarget).closest('div.eachItem').find('div.detail').toggle();
       }
   ,'click i.icon-remove' :
       function(e, ins) {
-        var item     = CharData.item
-          , $this    = $(e.currentTarget).closest('div.eachItem')
-          , name     = $this.find('input.name').val()
-          , $content = $this.closest('div.content')
-          , index    = $content.find('i.icon-remove').index(e.currentTarget)
+        var item      = ins.data
+          , character = item.character
+          , name      = item.name
           ;
 
         if (confirm('你確定要刪除角色的物品「' + name + '」嗎？')) {
-          item.splice(index, 1);
-          DB.character.update(CharData._id, {'$set' : {'item' : item }});
-          updateMsg('item');
+          DB.character_data.remove(item._id, function() {
+            updateMSG(character, '刪除了', '的「' + name + '」物品資料');
+          });
         }
       }
   ,'change input, change textarea' :
       function(e, ins) {
-        var item     = CharData.item
-          , name     = e.currentTarget.name
-          , value    = e.currentTarget.value
-          , $this    = $(e.currentTarget).closest('div.eachItem')
-          , $content = $this.closest('div.content')
-          , index    = $content.find('div.eachItem').index($this)
-          , $set     = {}
+        var item      = ins.data
+          , character = item.character
+          , type      = e.currentTarget.name
+          , value     = e.currentTarget.value
+          , $set      = {}
+          , msg       = '的' + (item.name ? '「' + item.name + '」' : '一項未命名') + '物品細節'
           ;
-        switch (name) {
+        switch (type) {
         case 'amount' :
         case 'weight' :
         case 'worth'  :
-          value = parseFloat(value);
+          $set[ type ] = parseFloat(value);
+          break;
+        case 'name'   :
+          msg += '為「' + value + '」';
+          $set[ type ] = value;
+          break;
+        case 'detail' :
+          $set[ type ] = value;
+        default       :
           break;
         }
-        $set['item.' + index + '.' + name] = value;
-        DB.character.update(CharData._id, {'$set' : $set});
-        updateMsg('item');
+        DB.character_data.update(item._id, {'$set' : $set}, function() {
+          updateMSG(character, '調整了', msg);
+        });
       }
   }
+
 )
 
 //spell
-Template.character_spell_PF.events(
+Template.character_PF_spell.events(
   //展開收起內容
   {'click legend'   : toggleContent
   //新增法術體系
@@ -844,7 +882,7 @@ Template.character_spell_PF.events(
       }
   }
 )
-Template.character_spell_PF.rendered =
+Template.character_PF_spell.rendered =
     function() {
       if (! this.firstNode) {
         return true;
@@ -857,112 +895,122 @@ Template.character_spell_PF.rendered =
     }
 
 //level
-Template.character_level_PF.events(
+Template.character_PF_level.helpers(
+  {'eachLevel' :
+      function(character) {
+        return _.map(_.range(getMaxLevel(character) + 1), function(level) {
+          return {'character' : character, 'level' : level};
+        });
+      }
+  ,'levelList' :
+      function(data) {
+        return  DB.character_data.find({'character' : data.character, 'type' : 'level', 'level' : data.level}, {'sort' : {'sort' : 1}});
+      }
+  ,'intToBig'  : intToBig
+  }
+)
+Template.character_PF_level.events(
   //展開收起內容
   {'click legend'       : toggleContent
   //新增升級紀錄
   ,'click legend a.add' :
       function(e, ins) {
+        var character = ins.data
+          , maxLevel  = getMaxLevel(character) + 1
+          , newData   =
+            {'character' : character
+            ,'type'      : 'level'
+            ,'level'     : maxLevel
+            ,'name'      : ''
+            ,'detail'    : ''
+            }
+          ;
+
         //防止繼續往上觸發click
         e.stopPropagation();
 
-        DB.character.update(CharData._id, {'$push' : {'level' : [] }});
-        updateMsg('level');
-      }
-  //降級
-  ,'click legend a.del' :
-      function(e, ins) {
-        //防止繼續往上觸發click
-        e.stopPropagation();
-        DB.character.update(CharData._id, {'$pop' : {'level' : 1 }});
-        updateMsg('level');
+        DB.character_data.insert(newData, function() {
+          updateMSG(character, '提升了', '的資訊紀錄至' + maxLevel + '級');
+        });
       }
   //在一筆等級資料中新增能力資訊
   ,'click div.eachLevel a.addAbility' :
       function(e, ins) {
-        var $this    = $(e.currentTarget).closest('div.eachLevel')
-          , $content = $this.closest('div.content')
-          , index    = $content.find('div.eachLevel').index($this)
-          , $push    = {}
-          , data     = { 'name' : '', 'detail' : ''}
+        var character = this.character
+          , level     = this.level
+          , newData   =
+            {'character' : character
+            ,'type'      : 'level'
+            ,'level'     : level
+            ,'name'      : ''
+            ,'detail'    : ''
+            }
           ;
-        $push['level.' + index] = data;
-        DB.character.update(CharData._id, {'$push' : $push});
-        updateMsg('level');
+        DB.character_data.insert(newData, function() {
+          updateMSG(character, '更新了', level + '級的等級資訊紀錄');
+        });
       }
+  }
+);
+Template.character_PF_level_list.helpers(
+  {'trim' : trim
+  }
+)
+Template.character_PF_level_list.events(
   //展開能力細節
-  ,'click div.eachAbility i.icon-plus, click div.eachAbility i.icon-th-list' :
+  {'click div.eachAbility i.icon-plus, click div.eachAbility i.icon-th-list' :
       function(e) {
         $(e.currentTarget).closest('div.eachAbility').find('textarea').toggle();
       }
   //刪除能力
   ,'click div.eachAbility i.icon-remove' :
       function(e, ins) {
-        var $this    = $(e.currentTarget).closest('div.eachAbility')
-          , value    = e.currentTarget.value
-          , $level   = $this.closest('div.eachLevel')
-          , aIndex   = $level.find('div.eachAbility').index($this)
-          , $content = $level.closest('div.content')
-          , lIndex   = $content.find('div.eachLevel').index($level)
-          , $set     = {}
-          , data     = CharData.level[lIndex];
+        var data  = ins.data
+          , level = data.level
           ;
-        data.splice(aIndex, 1);
-        $set['level.' + lIndex] = data;
-        DB.character.update(CharData._id, {'$set' : $set});
-        updateMsg('level');
+        if (confirm('你確定要刪除這筆等級' + level + '的資訊紀錄嗎？')) {
+          DB.character_data.remove(data._id, function() {
+            updateMSG(data.character, '更新了', level + '級的等級資訊紀錄');
+          });
+        }
       }
-  //修改能力名稱
-  ,'change input' :
+  //修改能力名稱細節
+  ,'change input, change textarea' :
       function(e, ins) {
-        var $this    = $(e.currentTarget).closest('div.eachAbility')
-          , value    = e.currentTarget.value
-          , $level   = $this.closest('div.eachLevel')
-          , aIndex   = $level.find('div.eachAbility').index($this)
-          , $content = $level.closest('div.content')
-          , lIndex   = $content.find('div.eachLevel').index($level)
+        var data     = ins.data
+          , type     = e.currentTarget.name
           , $set     = {}
           ;
-        $set['level.' + lIndex + '.' + aIndex + '.name'] = value;
-        DB.character.update(CharData._id, {'$set' : $set});
-        updateMsg('level');
-      }
-  //修改能力細節
-  ,'change textarea' :
-      function(e, ins) {
-        var $this    = $(e.currentTarget).closest('div.eachAbility')
-          , value    = e.currentTarget.value
-          , $level   = $this.closest('div.eachLevel')
-          , aIndex   = $level.find('div.eachAbility').index($this)
-          , $content = $level.closest('div.content')
-          , lIndex   = $content.find('div.eachLevel').index($level)
-          , $set     = {}
-          ;
-        $set['level.' + lIndex + '.' + aIndex + '.detail'] = value;
-        DB.character.update(CharData._id, {'$set' : $set});
-        updateMsg('level');
+
+        $set[ type ] = e.currentTarget.value;
+        DB.character_data.update(data._id, {'$set' : $set}, function() {
+          updateMSG(data.character, '更新了', data.level + '級的等級資訊紀錄');
+        });
       }
   }
-);
-Template.character_level_PF.rendered =
-    function() {
-      if (! this.firstNode) {
-        return true;
-      }
-      _.each(this.findAll('div.eachLevel strong'), function(v, i) {
-        $(v).text('ＬＶ' + intToBig(i));
-      });
-    }
+)
 
 //description
-Template.character_description_PF.events(
+Template.character_PF_description.helpers(
+  {'descriptionList' :
+      function(id) {
+        return DB.character_data.find({'character' : id, 'type' : 'description'}, {'sort' : {'sort' : 1}});
+      }
+  ,'trim'            : trim
+  }
+)
+Template.character_PF_description.events(
   //展開收起內容
   {'click legend'   : toggleContent
   //新增額外詳述
   ,'click legend a' :
       function(e, ins) {
-        var description = ins.data.description
-          , newData     = { 'value' : '' }
+        var character = ins.data
+          , newData   =
+            {'character' : character
+            ,'type'      : 'description'
+            ,'value'     : ''
+            }
           , undefined
           ;
         //防止繼續往上觸發click
@@ -972,164 +1020,37 @@ Template.character_description_PF.events(
         if (! newData.name) {
           return false;
         }
-        if (findName(description, newData.name) !== undefined) {
+        if (DB.character_data.findOne({'character' : character, 'type' : 'description', 'name' : newData.name}) !== undefined) {
           alert('角色已經存在額外詳述「' + newData.name +'」');
           return false;
         }
 
-        DB.character.update(CharData._id, {'$push' : {'description' : newData }});
-        updateMsg('description');
+        DB.character_data.insert(newData, function() {
+          updateMSG(character, '新增了', '的額外詳述「' + newData.name + '」');
+        });
       }
   ,'click i.icon-remove' :
       function(e, ins) {
-        var description = CharData.description
-          , name        = $(e.currentTarget).closest('div.eachDescription').attr('data-name')
+        var name      = this.name
+          , character = ins.data
           ;
 
         if (confirm('你確定要刪除角色的「' + name + '」額外詳述嗎？')) {
-          description = removeName(description, name);
-          DB.character.update(CharData._id, {'$set' : {'description' : description }});
-          updateMsg('description');
+          DB.character_data.remove(this._id, function() {
+            updateMSG(character, '刪除了', '的額外詳述「' + name + '」');
+          });
         }
       }
   ,'change textarea' :
       function(e, ins) {
-        var name        = e.currentTarget.name
-          , value       = e.currentTarget.value
-          , index       = indexName(description, name)
-          , $set        = {}
+        var name      = this.name
+          , character = ins.data
+          , $set      = {'value' : e.currentTarget.value}
           ;
-        $set['description.' + index + '.value'] = value;
-        DB.character.update(CharData._id, {'$set' : $set});
-        updateMsg('description');
+
+        DB.character_data.update(this._id, {'$set' : $set}, function() {
+          updateMSG(character, '更新了', '的額外詳述「' + name + '」');
+        });
       }
   }
 )
-
-//正常角色表轉化後初始計算與綁定事件
-var NormalRendered =
-    function() {
-      var data   = this.data
-        , number = data.number
-        , $field = $('#character_PF').find('fieldset')
-        ;
-      $field.on('click', 'legend', function() {
-        $(this).next('div.content').toggle();
-      });
-      $field.filter('.number,.dice').find('div.eachNumber,div.eachDice')
-        //移除一個tag
-        .on('click', 'i.icon-remove', function() {
-          var $this   = $(this).closest('div')
-            , $number = $this.closest('div.eachDice,div.eachNumber')
-            , $input
-            , $other
-            , $sum
-            ;
-          
-          //icon-remove位於prepend或append內，代表只刪除此input
-          if ($this.hasClass('input-prepend') || $this.hasClass('input-append')) {
-            $this.add($this.next('strong')).remove();
-            //如果刪除的是dice或number值
-            if ($number.length) {
-              $input  = $number.find('input');
-              $other  = $input.not('.sum').not($this);
-              $sum    = $input.filter('.sum');
-              //若刪除此input後無其他加值欄位
-              if ($other.length < 1) {
-                //使sum input歸0並觸發change事件
-                $sum.val(0).trigger('change');
-              }
-              //若刪除此input後有其他加值欄位
-              else {
-                //觸發最後一個input，使此列重計算
-                $other.last().tirgger('change');
-              }
-            }
-          }
-          //一次刪除一列時
-          else {
-            //如果刪除的是dice或number值
-            if ($number.length) {
-              //觸發依賴事件
-              $this.find('input.sum').val(0).trigger('change');
-            }
-            $this.remove();
-          }
-        })
-        //input數值變動時自動加總、自動修改所依賴格子
-        .on('change', 'input', function() {
-          var $this = $(this)
-            , value
-            , useIt
-            , $inputs
-            , sum
-            ;
-          //若變動之input為sum
-          if ($this.hasClass('sum')) {
-            value = $this.val();
-            useIt = $this.data('useIt');
-            //修改依賴此格之資料
-            if (useIt) {
-              _.each(useIt, function($user) {
-                $user.val(value).trigger('change');
-              });
-            }
-          }
-          //否則重新計算此列之sum
-          else {
-            $inputs = $this.closest('div.eachDice,div.eachNumber').find('input');
-            sum = 0
-            $inputs.not('.sum').each(function() {
-              sum += parseInt($(this).val(), 10);
-            });
-            $inputs.filter('.sum').val(sum).trigger('change');
-          }
-        })
-        //填入初始值與宣告依賴資料
-        .each(function() {
-          var $this    = $(this)
-            , thisName = $this.attr('data-name')
-            , thisData
-            ;
-          if ($this.hasClass('eachNumber')) {
-            thisData =  find(data.number, thisName);
-          }
-          else {
-            thisData =  find(data.dice, thisName);
-          }
-          
-          //填入初始值
-          $this
-          .find('input').each(function() {
-            var $this = $(this)
-              , name  = $this.attr('name')
-              , thisAdd
-              , $use
-              , useIt
-              ;
-            //填入總值
-            if ($this.hasClass('sum')) {
-              $this.attr('value', sum(thisData.value) );
-            }
-            else {
-              thisAdd = find(thisData.value , name);
-              //若此格數值是參照另一格的數值
-              if (thisAdd.use) {
-                $this.attr('value', sum( find(number, thisAdd.use).value ) );
-                //增加被參照格子的已依賴資料
-                $use = $field.filter('.number').find('div.eachNumber').filter('[data-name="' + thisAdd.use + '"]').find('input.sum');
-                useIt = $use.data('useIt');
-                if (! useIt) {
-                  $use.data('useIt', [ $this ]);
-                }
-                else {
-                  useIt.push( $this );
-                }
-              }
-              else {
-                $this.attr('value', thisAdd.value );
-              }
-            }
-          });
-        });
-    }

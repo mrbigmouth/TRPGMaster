@@ -7,6 +7,8 @@ Meteor.publish('initialize', function () {
     , message
     , users
     , character
+    , characterID
+    , dice
     ;
 
   //房間
@@ -42,6 +44,8 @@ Meteor.publish('initialize', function () {
   
 
   //自己角色的擲骰資料 
-  character = DB.character.find({'adm' : userID }, {'fields' : {'name' : 1, 'adm' : 1, 'room' : 1, 'dice' : 1}});
-  return [room, chapter, message, users, character];
+  character = DB.character.find({'adm' : userID}, {'fields' : {'name' : 1, 'adm' : 1, 'room' : 1}});
+  characterID = _.pluck(character.fetch(), '_id');
+  dice = DB.character_data.find({'character' : {'$in' : characterID}, 'type' : 'dice'});
+  return [room, chapter, message, users, character, dice];
 });

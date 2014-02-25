@@ -53,6 +53,7 @@ DB.character_data.allow(
       function(userID, doc) {
         var character = DB.character.findOne(doc.character)
           , room
+          , allSort
           ;
 
         if (! character || character.status >= 2) {
@@ -73,7 +74,13 @@ DB.character_data.allow(
         }
 
         doc._id = (Date.now() + '');
-        doc.sort = DB.character_data.find({'character' : doc.character, 'type' : doc.type}).count();
+        allSort = DB.character_data.find({'character' : doc.character, 'type' : doc.type}).fetch();
+        if (allSort.length > 0) {
+          doc.sort = _.max(allSort, function(d) { return d.sort; }).sort;
+        }
+        else {
+          doc.sort = 0;
+        }
         DB.character.update(doc._id, {'$set' : {'time' : Date.now()} });
         return true;
       }
