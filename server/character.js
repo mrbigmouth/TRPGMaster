@@ -180,8 +180,8 @@ Meteor.publish('character', function (id) {
 });
 
 
+/*
 DB.character.find({'spell.0.circle.0.known.name.name' : {'$exists' : true}}).forEach(function(doc) {
-  console.log('!');
   var spell = doc.spell;
   _.each(spell, function(spellClass) {
     _.each(spellClass.circle, function(circle) {
@@ -205,7 +205,6 @@ DB.character.find({'spell.0.circle.0.known.name.name' : {'$exists' : true}}).for
 });
 var now = Date.now();
 DB.character.find({'profile' : {'$exists' : true}}).forEach(function(doc) {
-  console.log('!');
   var id = doc._id;
   delete doc._id;
 
@@ -298,3 +297,4 @@ DB.character.find({'profile' : {'$exists' : true}}).forEach(function(doc) {
 
   DB.character.update(id, {'$unset' : {'profile' : '', 'number' : '', 'dice' : '', 'item' : '', 'spell' : '', 'level' : '', 'description' : ''} });
 });
+*/
