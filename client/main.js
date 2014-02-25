@@ -50,3 +50,32 @@ Router.map(function () {
     }
   );
 });
+
+var initialized = false
+  , disconnect  = false
+  ;
+
+if (Meteor.absoluteUrl() !== 'http://localhost:13667/') {
+  Deps.autorun(function () {
+    var connected = Meteor.status().connected;
+    if (initialized) {
+      if (connected) {
+        if (disconnect) {
+          alert('已恢復與伺服器間的連線！');
+          disconnect = false;
+        }
+      }
+      else {
+        if (disconnect === false) {
+          alert('注意！已失去與伺服器間的連線，此時所做的任何資料更改將不會更新至伺服器上！');
+          disconnect = true;
+        }
+      }
+    }
+    else {
+      if (connected) {
+        initialized = true;
+      }
+    }
+  });
+}
