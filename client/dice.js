@@ -157,7 +157,7 @@ Meteor.startup(function() {
                           if (v.use !== undefined) {
                             return (findNumber(character, v.use) || 0) + memo;
                           }
-                          return memo ;
+                          return memo;
                         }
                        ,0
                        );
@@ -169,7 +169,7 @@ Meteor.startup(function() {
       }
     , findNumber =
       function(character, name) {
-        var result = findName(character.number, name);
+        var result = DB.character_data.findOne({'character' : character, 'type' : 'dice', 'name' : name});
         if (! result) {
           return 0;
         }
@@ -181,37 +181,39 @@ Meteor.startup(function() {
       .on('change', function() {
         var result    = []
           , who       = this.value
-          , character = DB.character.findOne({'name' : who})
+          , character = DB.character.findOne({'adm' : Meteor.userId(), 'name' : who})
           , saveData  = STORE('QuickDice') || {}
           , dices     = {}
           ;
         saveData = saveData[who] || {};
         if (character) {
-          _.each(character.dice, function(v) {
-            var add = sum(character, v.value);
-            saveData[ v.name ] =
-                {'times'   : 1
-                ,'isHide'  : false
-                ,'dices'   :
-                    [ {'name'    : v.name
-                      ,'note'    : ''
-                      ,'addEach' : false
-                      ,'amount'  : 1
-                      ,'face'    : 20
-                      ,'add'     : add
-                      ,'extra'   : 0
-                      }
-                    ]
-                }
-            dices[ v.name ] =
-                {'note'    : ''
-                ,'addEach' : false
-                ,'amount'  : 1
-                ,'face'    : 20
-                ,'add'     : add
-                ,'extra'   : 0
-                }
-          });
+          DB.character_data
+            .find({'character' : character._id, 'type' : 'dice'}, {'sort' : {'sort' : 1}})
+            .forEach(function(v) {
+              var add = sum(character._id, v.value);
+              saveData[ v.name ] =
+                  {'times'   : 1
+                  ,'isHide'  : false
+                  ,'dices'   :
+                      [ {'name'    : v.name
+                        ,'note'    : ''
+                        ,'addEach' : false
+                        ,'amount'  : 1
+                        ,'face'    : 20
+                        ,'add'     : add
+                        ,'extra'   : 0
+                        }
+                      ]
+                  }
+              dices[ v.name ] =
+                  {'note'    : ''
+                  ,'addEach' : false
+                  ,'amount'  : 1
+                  ,'face'    : 20
+                  ,'add'     : add
+                  ,'extra'   : 0
+                  }
+            });
           //更新擲骰名目自動選項
           $dice.find('input.saveName').data('typeahead').source = _.keys(saveData);
           //更新擲骰名目自動填入資料
