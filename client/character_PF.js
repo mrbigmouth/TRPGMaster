@@ -413,7 +413,7 @@ Template.character_PF_number_row.events(
           return false;
         }
 
-        value[index].value = e.currentTarget.value;
+        value[index].value = parseInt(e.currentTarget.value, 10);
         DB.character_data.update(
           data._id
         , {'$set' : {'value' : value}}
