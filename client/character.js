@@ -22,25 +22,3 @@ Router.map(function () {
     }
   );
 });
-
-/*
-Template.main_character.helpers(
-  {'character'      :
-      function() {
-        var RouterParams = Session.get('RouterParams');
-        return DB.character.findOne(RouterParams.character) || {};
-      }
-  ,'isRule'          :
-      function(data, rule) {
-        return (RuleSwtich[ data.rule ] === rule);
-      }
-  }
-)
-Handlebars.registerHelper('characterRuleSwitch', function (character) {
-  switch (RuleSwtich[ character.rule ]) {
-  case 'PF':
-    return Template.character_profile_PF;
-  }
-});
-*/
-
