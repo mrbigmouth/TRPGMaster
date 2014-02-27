@@ -3,15 +3,15 @@ Template.main_character_PF.helpers(
       function(character) {
         var RouterParams = Session.get('RouterParams')
           , character    = (
-              ( DB.character.find(RouterParams.character, {fields: {'name': 1}}).fetch()[0] ) ||
+              ( DB.character.find(RouterParams.character, {'fields': {'name': 1}}).fetch()[0] ) ||
               {'name' : ''}
             )
           , room         = (
-              ( DB.room.find(RouterParams.room, {fields: {'name': 1}}).fetch()[0] ) ||
+              ( DB.room.find(RouterParams.room, {'fields': {'name': 1}}).fetch()[0] ) ||
               {'name' : ''}
             )
           ;
-        return room.name + '--' + character.name + ' 角色表';
+        return room.name + '--' + character.name + '角色表';
       }
   ,'characterID'      :
       function() {
@@ -20,12 +20,6 @@ Template.main_character_PF.helpers(
   }
 )
 
-
-
-  //計算陣列中object value總合之函數
-  //計算一物件陣列裡物件之屬性(或use參照值)總合
-
-  //尋找特定name的角色數值總合
 var updateMSG =
     function(characterID, msg1, msg2) {
       var character = DB.character.findOne(characterID) || {};
@@ -125,9 +119,7 @@ var updateMSG =
       }
   , getMaxLevel =
       function(character) {
-        var allLevel  = DB.character_data.find({'character' : character, 'type' : 'level'}, {'fields' : {'level' : 1}}).fetch()
-          , maxLevel
-          ;
+        var allLevel  = DB.character_data.find({'character' : character, 'type' : 'level'}, {'fields' : {'level' : 1}}).fetch();
         if (allLevel.length > 0) {
           return _.max(allLevel, function(d) { return d.level; }).level;
         }
@@ -135,9 +127,39 @@ var updateMSG =
           return 0;
         }
       }
+  , getMaxSpellCircle =
+      function(character, belong) {
+        var allLevel  = DB.character_data.find({'character' : character, 'type' : 'known', 'belong' : belong}, {'fields' : {'circle' : 1}}).fetch();
+        if (allLevel.length > 0) {
+          return _.max(allLevel, function(d) { return d.circle; }).circle;
+        }
+        else {
+          return 0;
+        }
+      }
+  , totalSpell =
+      function(type, character, belong, circle) {
+        var filter = {'character' : character, 'belong' : belong};
+        if (circle !== 'all') {
+          filter.circle = circle;
+        }
+        switch (type) {
+        case 'known' :
+          filter.type = 'known';
+          break;
+        case 'slot' :
+          filter.type = 'slot';
+          break;
+        case 'slotAvailable' :
+          filter.type = 'slot';
+          filter.used = false;
+          break;
+        }
+        return DB.character_data.find(filter).count();
+      }
   , toggleContent =
       function(e, ins) {
-        $(ins.firstNode).find('div.content').toggle();
+        $(ins.firstNode).find('div.content:first').toggle();
       }
   ;
 
@@ -159,7 +181,7 @@ Template.character_PF_profile.events(
   //新增基本訊息
   ,'click legend a' :
       function(e, ins) {
-        var character = ins.data
+        var character = ins.data + ''
           , data      =
             {'character' : character
             ,'type'      : 'profile'
@@ -191,7 +213,7 @@ Template.character_PF_profile.events(
   ,'click i.icon-remove' :
       function(e, ins) {
         var data      = this
-          , character = ins.data
+          , character = ins.data + ''
           ;
         if (confirm('你確定要刪除角色的「' + data.name + '」基本訊息嗎？')) {
           DB.character_data.remove(data._id, function() {
@@ -204,7 +226,7 @@ Template.character_PF_profile.events(
         var name      = e.currentTarget.name
           , value     = e.currentTarget.value
           , data      = this
-          , character = ins.data
+          , character = ins.data + ''
           ;
         if (name === 'name') {
           DB.character.update(
@@ -242,7 +264,7 @@ Template.character_PF_number.events(
   //新增角色數值
   ,'click legend a' :
       function(e, ins) {
-        var character = ins.data
+        var character = ins.data + ''
           , newData      =
             {'character' : character
             ,'type'      : 'number'
@@ -411,7 +433,7 @@ Template.character_PF_dice.events(
   //新增擲骰資料
   ,'click legend a' :
       function(e, ins) {
-        var character = ins.data
+        var character = ins.data + ''
           , newData   =
             {'character' : character
             ,'type'      : 'dice'
@@ -438,7 +460,6 @@ Template.character_PF_dice.events(
       }
   }
 )
-
 Template.character_PF_dice_list.helpers(
   {'getDice'        : findNumber
   ,'findNameNumber' : findNameNumber
@@ -583,7 +604,7 @@ Template.character_PF_item.events(
   //新增物品
   ,'click legend a' :
       function(e, ins) {
-        var character = ins.data
+        var character = ins.data + ''
           , newData   =
             {'character' : character
             ,'type'      : 'item'
@@ -660,239 +681,355 @@ Template.character_PF_item_list.events(
 )
 
 //spell
+var spellClass    = []
+  , spellClassDep = new Deps.Dependency()
+  ;
+Deps.autorun(function() {
+  var result = []
+    , temp   = {}
+    , params = Session.get('RouterParams') || {}
+    , undefined
+    ;
+  DB.character_data
+    .find(
+      {'character' : params.character
+      ,'type'      : 'known'
+      }
+    , {'fields'    : {'belong' : 1}}
+    )
+    .forEach(function(doc) {
+      if (temp[ doc.belong ] === undefined) {
+        result.push(
+          {'character' : params.character
+          ,'belong'    : doc.belong
+          }
+        );
+        temp[ doc.belong ] = true;
+      }
+    })
+  if (spellClass.length !== result.length) {
+    spellClass = result;
+    spellClassDep.changed();
+  }
+});
+Template.character_PF_spell.helpers(
+  {'allClass'    :
+      function(id) {
+        spellClassDep.depend();
+        return spellClass;
+      }
+  }
+)
 Template.character_PF_spell.events(
   //展開收起內容
-  {'click legend'   : toggleContent
+  {'click legend'      : toggleContent
+  //切換tab
+  ,'click ul.nav-tabs li' :
+      function(e) {
+        var $this = $(e.currentTarget)
+          , $tab
+          , index
+          , $pane
+          ;
+
+        if ($this.hasClass('active')) {
+          return true;
+        }
+        $tab = $this.closest('ul').children();
+        index = $tab.index($this);
+        $pane = $tab.closest('div.content').find('div.tab-content div.tab-pane');
+        $tab.not($this).removeClass('active');
+        $this.addClass('active');
+        $pane.removeClass('in active').eq(index).addClass('in active');
+        return true;
+      }
   //新增法術體系
-  ,'click legend a' :
+  ,'click ul.nav-tabs a.add' :
       function(e, ins) {
-        var spell   = CharData.spell
-          , newData = { 'circle' : [] }
+        var character = ins.data + ''
+          , newData   =
+            {'belong'    : ''
+            ,'character' : character
+            ,'circle'    : 0
+            ,'type'      : 'known'
+            ,'name'      : ''
+            ,'detail'    : ''
+            }
+          , filter
           , undefined
           ;
         //防止繼續往上觸發click
         e.stopPropagation();
 
-        newData.name = window.prompt('請輸入要新增的法術體系名稱：');
-        if (! newData.name) {
+        newData.belong = window.prompt('請輸入要新增的法術體系名稱：');
+        if (! newData.belong) {
           return false;
         }
-        if (findName(spell, newData.name) !== undefined) {
-          alert('角色已經法術體系「' + newData.name +'」');
+        filter    =
+          {'character' : character
+          ,'type'      : 'known'
+          ,'belong'    : newData.belong
+          }
+        if (DB.character_data.findOne(filter) !== undefined) {
+          alert('角色已經法術體系「' + newData.belong +'」');
           return false;
         }
-        DB.character.update(CharData._id, {'$push' : {'spell' : newData }});
-        updateMsg('spell');
-      }
-  //移除法術體系
-  ,'click i.icon-remove.spell' :
-      function(e, ins) {
-        var spell   = CharData.spell
-          , name    = $(e.currentTarget).closest('div.eachSpell').attr('data-name')
-          ;
-
-        if (confirm('你確定要刪除角色的「' + name + '」法術體系嗎？')) {
-          spell = removeName(spell, name);
-          DB.character.update(CharData._id, {'$set' : {'spell' : spell }});
-          updateMsg('spell');
-        }
-      }
-  //新增法術等級
-  ,'click h4 a' :
-      function(e, ins) {
-        var $this    = $(e.currentTarget).closest('div.eachSpell')
-          , $content = $this.closest('div.content')
-          , index    = $content.find('div.eachSpell').index($this)
-          , $push    = {}
-          ;
-        //防止繼續往上觸發click
-        e.stopPropagation();
-
-        $push['spell.' + index + '.circle'] = {'known' : [], 'slot' : []};
-        DB.character.update(CharData._id, {'$push' : $push});
-      }
-  //新增已知法術
-  ,'click p.known i.icon-plus' :
-      function(e, ins) {
-        var $circle     = $(e.currentTarget).closest('div.eachCircle')
-          , $spell      = $circle.closest('div.eachSpell')
-          , $content    = $spell.closest('div.content')
-          , spellIndex  = $content.find('div.eachSpell').index($spell)
-          , circleIndex = $spell.find('div.eachCircle').index($circle)
-          , $push       = {}
-          ;
-        //防止繼續往上觸發click
-        e.stopPropagation();
-
-        $push['spell.' + spellIndex + '.circle.' + circleIndex + '.known'] = {'name' : '', 'detail' : ''};
-        DB.character.update(CharData._id, {'$push' : $push});
-      }
-  //編輯已知法術
-  ,'change p.known input' :
-      function(e, ins) {
-        var value       = e.currentTarget.value
-          , spell       = CharData.spell
-          , $known      = $(e.currentTarget).closest('div')
-          , $circle     = $known.closest('div.eachCircle')
-          , $spell      = $circle.closest('div.eachSpell')
-          , $content    = $spell.closest('div.content')
-          , spellIndex  = $content.find('div.eachSpell').index($spell)
-          , circleIndex = $spell.find('div.eachCircle').index($circle)
-          , knownIndex  = $circle.find('p.known > div').index($known)
-          , $set        = {}
-          ;
-
-        $set['spell.' + spellIndex + '.circle.' + circleIndex + '.known.' + knownIndex] = value;
-        DB.character.update(CharData._id, {'$set' : $set});
-      }
-  //移除已知法術
-  ,'click p.known i.icon-remove' :
-      function(e, ins) {
-        var value       = e.currentTarget.value
-          , spell       = CharData.spell
-          , $known      = $(e.currentTarget).closest('div')
-          , $circle     = $known.closest('div.eachCircle')
-          , $spell      = $circle.closest('div.eachSpell')
-          , $content    = $spell.closest('div.content')
-          , spellIndex  = $content.find('div.eachSpell').index($spell)
-          , circleIndex = $spell.find('div.eachCircle').index($circle)
-          , knownIndex  = $circle.find('p.known > div').index($known)
-          , $set        = {}
-          , data
-          ;
-
-        data = spell[spellIndex];
-        if (data) {
-          data = data.circle;
-          if (data) {
-            data = data[circleIndex];
-            if (data) {
-              data = data.known;
-              if (data) {
-                data.splice(knownIndex, 1);
-                $set['spell.' + spellIndex + '.circle.' + circleIndex + '.known'] = data;
-                DB.character.update(CharData._id, {'$set' : $set});
-              }
-            }
-          }
-        }
-        $set['spell.' + spellIndex + '.circle.' + circleIndex + '.known.' + knownIndex] = value;
-        DB.character.update(ins.data._id, {'$set' : $set});
-      }
-  //新增法術格
-  ,'click p.slot i.icon-plus' :
-      function(e, ins) {
-        var $circle     = $(e.currentTarget).closest('div.eachCircle')
-          , $spell      = $circle.closest('div.eachSpell')
-          , $content    = $spell.closest('div.content')
-          , spellIndex  = $content.find('div.eachSpell').index($spell)
-          , circleIndex = $spell.find('div.eachCircle').index($circle)
-          , $push       = {}
-          ;
-        //防止繼續往上觸發click
-        e.stopPropagation();
-
-        $push['spell.' + spellIndex + '.circle.' + circleIndex + '.slot'] = {'name' : '', 'used' : false} ;
-        DB.character.update(CharData._id, {'$push' : $push});
-      }
-  //編輯法術格
-  ,'change p.slot input' :
-      function(e, ins) {
-        var value       = e.currentTarget.value
-          , spell       = CharData.spell
-          , $slot       = $(e.currentTarget).closest('div')
-          , $circle     = $slot.closest('div.eachCircle')
-          , $spell      = $circle.closest('div.eachSpell')
-          , $content    = $spell.closest('div.content')
-          , spellIndex  = $content.find('div.eachSpell').index($spell)
-          , circleIndex = $spell.find('div.eachCircle').index($circle)
-          , slotIndex   = $circle.find('p.slot > div').index($slot)
-          , $set        = {}
-          ;
-
-        $set['spell.' + spellIndex + '.circle.' + circleIndex + '.slot.' + slotIndex + '.name'] = value;
-        DB.character.update(CharData._id, {'$set' : $set});
-      }
-  //移除法術格
-  ,'click p.slot i.icon-remove' :
-      function(e, ins) {
-        var spell       = CharData.spell
-          , $slot       = $(e.currentTarget).closest('div')
-          , $circle     = $slot.closest('div.eachCircle')
-          , $spell      = $circle.closest('div.eachSpell')
-          , $content    = $spell.closest('div.content')
-          , spellIndex  = $content.find('div.eachSpell').index($spell)
-          , circleIndex = $spell.find('div.eachCircle').index($circle)
-          , slotIndex   = $circle.find('p.slot > div').index($slot)
-          , $set        = {}
-          , data
-          ;
-        //防止繼續往上觸發click
-        e.stopPropagation();
-
-        data = spell[spellIndex];
-        if (data) {
-          data = data.circle;
-          if (data) {
-            data = data[circleIndex];
-            if (data) {
-              data = data.slot;
-              data.splice(slotIndex, 1);
-              $set['spell.' + spellIndex + '.circle.' + circleIndex + '.slot'] = data;
-              DB.character.update(CharData._id, {'$set' : $set});
-            }
-          }
-        }
-      }
-  //標示為已使用/未使用
-  ,'click p.slot i.icon-ok' :
-      function(e, ins) {
-        var spell       = CharData.spell
-          , $slot       = $(e.currentTarget).closest('div')
-          , $circle     = $slot.closest('div.eachCircle')
-          , $spell      = $circle.closest('div.eachSpell')
-          , $content    = $spell.closest('div.content')
-          , spellIndex  = $content.find('div.eachSpell').index($spell)
-          , circleIndex = $spell.find('div.eachCircle').index($circle)
-          , slotIndex   = $circle.find('p.slot > div').index($slot)
-          , $set        = {}
-          , data
-          ;
-        //防止繼續往上觸發click
-        e.stopPropagation();
-
-        data = spell[spellIndex];
-        if (data) {
-          data = data.circle;
-          if (data) {
-            data = data[circleIndex];
-            if (data) {
-              data = data['slot'];
-              if (data) {
-                data = data[slotIndex];
-                if (data) {
-                  data = ! data.used;
-                  $set['spell.' + spellIndex + '.circle.' + circleIndex + '.slot.' + slotIndex + '.used'] = data;
-                  DB.character.update(CharData._id, {'$set' : $set});
-                }
-              }
-            }
-          }
-        }
+        DB.character_data.insert(newData, function() {
+          updateMSG(character, '新增了', '的「' + newData.belong + '」法術體系');
+        });
       }
   }
 )
 Template.character_PF_spell.rendered =
     function() {
-      if (! this.firstNode) {
-        return true;
-      }
-      $(this.findAll('div.eachSpell')).each(function() {
-        $(this).find('strong').each(function(i) {
-          $(this).text( intToBig(i) );
-        });
-      });
+      $(this.find('li')).addClass('active');
+      $(this.find('div.tab-pane')).addClass('in active');
     }
+Template.character_PF_spellClass.helpers(
+  {'totalSpell'  : totalSpell
+  ,'spellKnownCircle' :
+      function(character, belong) {
+        //取最高環 + 零環 + 最高環+1環
+        var showCircle = getMaxSpellCircle(character, belong) + 2;
+        if (showCircle > 10) {
+          showCircle = 10;
+        }
+        return _.map(_.range(showCircle), function(circle) {
+          return {'character' : character, 'belong' : belong, 'circle' : circle};
+        });
+      }
+  ,'spellSlotCircle'  :
+      function(character, belong) {
+        var showCircle = getMaxSpellCircle(character, belong) + 1;
+        if (showCircle > 10) {
+          showCircle = 10;
+        }
+        return _.map(_.range(showCircle), function(circle) {
+          return {'character' : character, 'belong' : belong, 'circle' : circle};
+        });
+      }
+  }
+);
+Template.character_PF_spellClass.events(
+  //展開收起內容
+  {'click h4' :
+      function(e) {
+        $(e.currentTarget).next().toggle();
+      }
+  }
+)
+Template.character_PF_spellKnown.helpers(
+  {'totalSpell'  : totalSpell
+  ,'spellKnown'  :
+      function(character, belong, circle) {
+        return DB.character_data
+                .find(
+                  {'character' : character
+                  ,'type'      : 'known'
+                  ,'belong'    : belong
+                  ,'circle'    : circle
+                  }
+                , {'sort'      : {'sort' : 1}
+                  }
+                )
+      }
+  ,'intToBig'    : intToBig
+  ,'trim'        : trim
+  }
+);
+Template.character_PF_spellKnown.events(
+  //展開收起此環級法術的內容
+  {'click h5' :
+      function(e) {
+        $(e.currentTarget).next().toggle();
+      }
+  //展開法術細節
+  ,'click div.eachKnown i.icon-pencil, click div.eachKnown i.icon-th-list' :
+      function(e) {
+        //防止繼續往上觸發click
+        e.stopPropagation();
+        $(e.currentTarget).closest('div.eachKnown').find('textarea').toggle();
+      }
+  //新增法術
+  ,'click i.icon-plus' :
+      function(e) {
+        var character = this.character
+          , circle    = this.circle
+          , belong    = this.belong
+          , newData   =
+            {'belong'    : belong
+            ,'character' : character
+            ,'circle'    : circle
+            ,'type'      : 'known'
+            ,'name'      : ''
+            ,'detail'    : ''
+            }
+          ;
+
+        //防止繼續往上觸發click
+        e.stopPropagation();
+
+        DB.character_data.insert(newData, function() {
+          updateMSG(character, '新增了', '「' + belong + '」職業的一個' + circle + '環法術');
+        });
+      }
+  //刪除法術
+  ,'click i.icon-remove' :
+      function() {
+        var name      = this.name
+          , character = this.character
+          , belong    = this.belong
+          , circle    = this.circle
+          ;
+        if (confirm('你確定要刪除法術「' + name + '」嗎？')) {
+          DB.character_data.remove(this._id, function() {
+            updateMSG(character, '刪除了', '「' + belong + '」職業的'  + (name ? '「' + name + '」' : '一個未命名') +  circle + '環法術資料');
+          });
+        }
+      }
+  //修改法術名稱細節
+  ,'change input, change textarea' :
+      function(e, ins) {
+        var data      = this
+          , character = data.character
+          , name      = data.name
+          , belong    = data.belong
+          , circle    = data.circle
+          , type      = e.currentTarget.name
+          , value     = e.currentTarget.value
+          , $set      = {}
+          , msg       = '「' + belong + '」職業的' + (name ? '「' + name + '」' : '一個未命名') + circle + '環法術資料';
+          ;
+
+        if (type === 'name') {
+          msg += '為「' + value + '」';
+        }
+        $set[ type ] = value;
+        DB.character_data.update(data._id, {'$set' : $set}, function() {
+          updateMSG(character, '更新了', msg);
+        });
+      }
+  }
+);
+Template.character_PF_spellSlot.helpers(
+  {'totalSpell'  : totalSpell
+  ,'intToBig'    : intToBig
+  ,'spellSlot'   :
+      function(character, belong, circle) {
+        return DB.character_data
+                .find(
+                  {'character' : character
+                  ,'type'      : 'slot'
+                  ,'belong'    : belong
+                  ,'circle'    : circle
+                  }
+                , {'sort'      : {'sort' : 1}
+                  }
+                )
+      }
+  //可準備法術列表
+  ,'prepareList' :
+      function(character, belong, circle, prepared) {
+        var result = [];
+        DB.character_data
+          .find(
+            {'character' : character
+            ,'type'      : 'known'
+            ,'belong'    : belong
+            ,'circle'    : circle
+            }
+          , {'sort'      : {'sort' : 1}
+            ,'fields'    : {'name' : 1}
+            }
+          )
+          .forEach(function(doc) {
+            result.push(doc.name);
+          });
+        
+        if (prepared) {
+          result.unshift(prepared);
+        }
+        else {
+          result.unshift('未準備');
+        }
+        return result;
+      }
+  }
+);
+Template.character_PF_spellSlot.events(
+  //新增法術格
+  {'click i.icon-plus' :
+      function() {
+        var character = this.character
+          , circle    = this.circle
+          , belong    = this.belong
+          , newData   =
+            {'belong'    : belong
+            ,'character' : character
+            ,'circle'    : circle
+            ,'type'      : 'slot'
+            ,'name'      : ''
+            ,'used'      : false
+            }
+          ;
+        console.log(this);
+        DB.character_data.insert(newData, function() {
+          updateMSG(character, '調整了', '在「' + belong + '」職業' + circle + '環法術的法術格數量');
+        });
+      }
+  //刪除法術格
+  ,'click i.icon-minus' :
+      function() {
+        var character = this.character
+          , circle    = this.circle
+          , belong    = this.belong
+          , slot     =
+              DB.character_data
+                .findOne(
+                  {'character' : character
+                  ,'type'      : 'slot'
+                  ,'belong'    : belong
+                  ,'circle'    : circle
+                  }
+                , {'sort'      : {'sort' : -1}
+                  }
+                )
+          ;
+        console.log(this);
+        DB.character_data.remove(slot._id, function() {
+          updateMSG(character, '調整了', '在「' + belong + '」職業' + circle + '環法術的法術格數量');
+        });
+      }
+  //修改準備法術
+  ,'change select' :
+      function(e, ins) {
+        var data      = this
+          , character = data.character
+          , belong    = data.belong
+          , circle    = data.circle
+          , value     = $(e.currentTarget).val()
+          ;
+
+        DB.character_data.update(data._id, {'$set' : {'name' : value}}, function() {
+          updateMSG(character, '調整了', '在「' + belong + '」職業' + circle + '環法術的準備法術');
+        });
+      }
+  //標示為已使用
+  ,'click i.icon-ok' :
+      function(e, ins) {
+        var data      = this
+          , character = data.character
+          , belong    = data.belong
+          , circle    = data.circle
+          , isUsed    = (data.used ? false : true)
+          ;
+
+        DB.character_data.update(data._id, {'$set' : {'used' : isUsed}}, function() {
+          updateMSG(character, '調整了', '在「' + belong + '」職業' + circle + '環法術的法術格使用情形');
+        });
+      }
+  }
+);
 
 //level
 Template.character_PF_level.helpers(
@@ -908,14 +1045,14 @@ Template.character_PF_level.helpers(
       }
   ,'intToBig'  : intToBig
   }
-)
+);
 Template.character_PF_level.events(
   //展開收起內容
   {'click legend'       : toggleContent
   //新增升級紀錄
   ,'click legend a.add' :
       function(e, ins) {
-        var character = ins.data
+        var character = ins.data + ''
           , maxLevel  = getMaxLevel(character) + 1
           , newData   =
             {'character' : character
@@ -955,7 +1092,7 @@ Template.character_PF_level.events(
 Template.character_PF_level_list.helpers(
   {'trim' : trim
   }
-)
+);
 Template.character_PF_level_list.events(
   //展開能力細節
   {'click div.eachAbility i.icon-plus, click div.eachAbility i.icon-th-list' :
@@ -988,7 +1125,7 @@ Template.character_PF_level_list.events(
         });
       }
   }
-)
+);
 
 //description
 Template.character_PF_description.helpers(
@@ -1005,7 +1142,7 @@ Template.character_PF_description.events(
   //新增額外詳述
   ,'click legend a' :
       function(e, ins) {
-        var character = ins.data
+        var character = ins.data + ''
           , newData   =
             {'character' : character
             ,'type'      : 'description'
@@ -1032,7 +1169,7 @@ Template.character_PF_description.events(
   ,'click i.icon-remove' :
       function(e, ins) {
         var name      = this.name
-          , character = ins.data
+          , character = ins.data + ''
           ;
 
         if (confirm('你確定要刪除角色的「' + name + '」額外詳述嗎？')) {
@@ -1044,7 +1181,7 @@ Template.character_PF_description.events(
   ,'change textarea' :
       function(e, ins) {
         var name      = this.name
-          , character = ins.data
+          , character = ins.data + ''
           , $set      = {'value' : e.currentTarget.value}
           ;
 
