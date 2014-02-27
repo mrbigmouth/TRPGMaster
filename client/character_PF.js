@@ -789,7 +789,22 @@ Template.character_PF_spellClass.helpers(
   {'totalSpell'  : totalSpell
   ,'spellKnownCircle' :
       function(character, belong) {
-        return _.map(_.range(getMaxSpellCircle(character, belong) + 2), function(circle) {
+        //取最高環 + 零環 + 最高環+1環
+        var showCircle = getMaxSpellCircle(character, belong) + 2;
+        if (showCircle > 10) {
+          showCircle = 10;
+        }
+        return _.map(_.range(showCircle), function(circle) {
+          return {'character' : character, 'belong' : belong, 'circle' : circle};
+        });
+      }
+  ,'spellSlotCircle'  :
+      function(character, belong) {
+        var showCircle = getMaxSpellCircle(character, belong) + 1;
+        if (showCircle > 10) {
+          showCircle = 10;
+        }
+        return _.map(_.range(showCircle), function(circle) {
           return {'character' : character, 'belong' : belong, 'circle' : circle};
         });
       }
@@ -831,7 +846,6 @@ Template.character_PF_spellKnown.events(
   //展開法術細節
   ,'click div.eachKnown i.icon-pencil, click div.eachKnown i.icon-th-list' :
       function(e) {
-        debugger;
         //防止繼續往上觸發click
         e.stopPropagation();
         $(e.currentTarget).closest('div.eachKnown').find('textarea').toggle();
@@ -893,6 +907,125 @@ Template.character_PF_spellKnown.events(
         $set[ type ] = value;
         DB.character_data.update(data._id, {'$set' : $set}, function() {
           updateMSG(character, '更新了', msg);
+        });
+      }
+  }
+);
+Template.character_PF_spellSlot.helpers(
+  {'totalSpell'  : totalSpell
+  ,'intToBig'    : intToBig
+  ,'spellSlot'   :
+      function(character, belong, circle) {
+        return DB.character_data
+                .find(
+                  {'character' : character
+                  ,'type'      : 'slot'
+                  ,'belong'    : belong
+                  ,'circle'    : circle
+                  }
+                , {'sort'      : {'sort' : 1}
+                  }
+                )
+      }
+  //可準備法術列表
+  ,'prepareList' :
+      function(character, belong, circle, prepared) {
+        var result = [];
+        DB.character_data
+          .find(
+            {'character' : character
+            ,'type'      : 'known'
+            ,'belong'    : belong
+            ,'circle'    : circle
+            }
+          , {'sort'      : {'sort' : 1}
+            ,'fields'    : {'name' : 1}
+            }
+          )
+          .forEach(function(doc) {
+            result.push(doc.name);
+          });
+        
+        if (prepared) {
+          result.unshift(prepared);
+        }
+        else {
+          result.unshift('未準備');
+        }
+        return result;
+      }
+  }
+);
+Template.character_PF_spellSlot.events(
+  //新增法術格
+  {'click i.icon-plus' :
+      function() {
+        var character = this.character
+          , circle    = this.circle
+          , belong    = this.belong
+          , newData   =
+            {'belong'    : belong
+            ,'character' : character
+            ,'circle'    : circle
+            ,'type'      : 'slot'
+            ,'name'      : ''
+            ,'used'      : false
+            }
+          ;
+        console.log(this);
+        DB.character_data.insert(newData, function() {
+          updateMSG(character, '調整了', '在「' + belong + '」職業' + circle + '環法術的法術格數量');
+        });
+      }
+  //刪除法術格
+  ,'click i.icon-minus' :
+      function() {
+        var character = this.character
+          , circle    = this.circle
+          , belong    = this.belong
+          , slot     =
+              DB.character_data
+                .findOne(
+                  {'character' : character
+                  ,'type'      : 'slot'
+                  ,'belong'    : belong
+                  ,'circle'    : circle
+                  }
+                , {'sort'      : {'sort' : -1}
+                  }
+                )
+          ;
+        console.log(this);
+        DB.character_data.remove(slot._id, function() {
+          updateMSG(character, '調整了', '在「' + belong + '」職業' + circle + '環法術的法術格數量');
+        });
+      }
+  //修改準備法術
+  ,'change select' :
+      function(e, ins) {
+        var data      = this
+          , character = data.character
+          , belong    = data.belong
+          , circle    = data.circle
+          , value     = $(e.currentTarget).val()
+          ;
+
+        DB.character_data.update(data._id, {'$set' : {'name' : value}}, function() {
+          updateMSG(character, '調整了', '在「' + belong + '」職業' + circle + '環法術的準備法術');
+        });
+      }
+  //標示為已使用
+  ,'click i.icon-ok' :
+      function(e, ins) {
+        var data      = this
+          , character = data.character
+          , belong    = data.belong
+          , circle    = data.circle
+          , isUsed    = (data.used ? false : true)
+          ;
+
+        DB.character_data.update(data._id, {'$set' : {'used' : isUsed}}, function() {
+          updateMSG(character, '調整了', '在「' + belong + '」職業' + circle + '環法術的法術格使用情形');
         });
       }
   }
