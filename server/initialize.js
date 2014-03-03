@@ -20,6 +20,7 @@ Meteor.publish('initialize', function () {
       DB.room.find(
         {'$or'    :
             [{'_id'    : TRPG.public._id}
+            ,{'public' : true}
             ,{'adm'    : userID}
             ,{'player' : userID}
             ]
