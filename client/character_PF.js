@@ -677,7 +677,6 @@ Template.character_PF_item_list.events(
         });
       }
   }
-
 )
 
 //spell
