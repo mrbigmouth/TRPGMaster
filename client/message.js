@@ -181,6 +181,10 @@ Template.message_list.helpers(
       function() {
         return (this.room && this.chapter && this.section);
       }
+  ,'isDocument'  :
+      function() {
+        return (this.room && this.document);
+      }
   ,'isCharacter'    :
       function() {
         return !!(this.character);

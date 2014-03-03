@@ -67,6 +67,10 @@
         <span>　</span>
         <a href="/room/{{this.room}}/{{this.chapter}}/#{{this.section}}">前往</a>
       {{/if}}
+      {{#if isDocument}}
+        <span>　</span>
+        <a href="/room/{{this.room}}/doc/#{{this.document}}">前往</a>
+      {{/if}}
       {{#if isCharacter}}
         <span>　</span>
         <a href="/character/{{this.room}}/{{this.character}}/">前往</a>

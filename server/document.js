@@ -1,18 +1,23 @@
 DB.document.allow(
   {'insert' :
       function(userID, doc) {
-        var room = DB.room.findOne(doc.room);
+        var room = DB.room.findOne(doc.room)
+          , sort
+          ;
         doc.time = Date.now();
         doc._id = doc.time + '';
         doc.user = userID;
-        if (userID === TRPG.adm || doc.room === TRPG.public._id || (room.status !== 0 && room.adm && room.adm.indexOf(userID) !== -1)) {
+        if (userID === TRPG.adm || doc.room === TRPG.public.id || (room.status !== 0 && room.adm && room.adm.indexOf(userID) !== -1)) {
+          doc.sort = DB.document.find({'room' : doc.room, 'parent' : doc.parent}).count();
           DB.room.update(room._id, {'$set' : {'time' : doc.time } });
           DB.message_all.insert(
-            {'_id'  : doc._id
-            ,'type' : 'room'
-            ,'user' : doc.user
-            ,'room' : doc.room
-            ,'msg'  : '新增了一則團務資料「' + doc.name + '」。'
+            {'_id'      : doc._id
+            ,'type'     : 'room'
+            ,'user'     : doc.user
+            ,'room'     : doc.room
+            ,'document' : doc._id
+            ,'time'     : doc.time
+            ,'msg'      : '新增了一條資料「' + doc.name + '」。'
             }
           );
           return true;
@@ -21,12 +26,11 @@ DB.document.allow(
       }
   ,'update' :
       function(userID, doc, fieldNames) {
-        if (fieldNames[0] === 'temp') {
-          return false;
-        }
-        var room = DB.room.findOne(doc.room);
-        if (userID === TRPG.adm || userID === doc.user || (room.status !== 0 && room.adm && room.adm.indexOf(userID) !== -1)) {
-          var now = Date.now();
+        var room = DB.room.findOne(doc.room)
+          , now
+          ;
+        if (userID === TRPG.adm || doc.room === TRPG.public.id || userID === doc.user || (room.adm && room.adm.indexOf(userID) !== -1)) {
+          now = Date.now();
           if (userID !== doc.user) {
             DB.document.update(doc._id, {'$set' : {'user' : userID, 'time' : now } });
           }
@@ -34,14 +38,6 @@ DB.document.allow(
             DB.document.update(doc._id, {'$set' : {'time' : now } });
           }
           DB.room.update(room._id, {'$set' : {'time' : now } });
-          DB.message_all.insert(
-            {'_id'  : (now + '')
-            ,'type' : 'room'
-            ,'user' : userID
-            ,'room' : doc.room
-            ,'msg'  : '修改了團務資料「' + doc.name + '」。'
-            }
-          );
           return true;
         }
         return false;
@@ -49,17 +45,8 @@ DB.document.allow(
   ,'remove' :
       function(userID, doc) {
         var room = DB.room.findOne(doc.room);
-        if (userID === TRPG.adm || userID === doc.user || (room.status !== 0 && room.adm && room.adm.indexOf(userID) !== -1)) {
-          var now = Date.now();
-          DB.room.update(room._id, {'$set' : {'time' : now } });
-          DB.message_all.insert(
-            {'_id'  : (Date.now() + '')
-            ,'type' : 'room'
-            ,'user' : userID
-            ,'room' : doc.room
-            ,'msg'  : '移除了團務資料「' + doc.name + '」。'
-            }
-          );
+        if (userID === TRPG.adm || doc.room === TRPG.public.id  || userID === doc.user || (room.status !== 0 && room.adm && room.adm.indexOf(userID) !== -1)) {
+          DB.room.update(room._id, {'$set' : {'time' : Date.now() } });
           return true;
         }
         return false;
@@ -67,21 +54,21 @@ DB.document.allow(
   }
 );
 
-Meteor.publish('document', function () {
-  var userID = this.userID
-    , canSee
-    ;
-  if (userID === TRPG.adm) {
-    return DB.document.find();
-  }
-  else {
-    canSee =
-        {'$or'    :
-            [{'public' : true}
-            ,{'adm'    : userID}
-            ,{'player' : userID}
-            ]
-        }
-    return DB.document.find(canSee);
-  }
+Meteor.publish('documentList', function (room) {
+  return DB.document
+          .find(
+            {'room' : room}
+          , {'fields' :
+              {'_id'    : 1
+              ,'room'   : 1
+              ,'parent' : 1
+              ,'sort'   : 1
+              ,'name'   : 1
+              }
+            }
+          );
+});
+
+Meteor.publish('document', function (doc) {
+  return DB.document.find({'_id' : doc});
 });

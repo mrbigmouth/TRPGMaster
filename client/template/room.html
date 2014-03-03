@@ -16,14 +16,12 @@
   <section>
    <h2>章節區</h2>
     <ul class="breadcrumb">
-      {{#isolate}}
-        {{#each allChapters}}
-          <li><a href="/room/{{this.room}}/{{this._id}}/"> {{this.name}} </a> <span class="divider">/</span></li>
-        {{/each}}
-        {{#if isAdm}}
-          <li><a href="javascript:" class="addChapter">新增章節</a></li>
-        {{/if}}
-      {{/isolate}}
+      {{#each allChapters}}
+        <li><a href="/room/{{this.room}}/{{this._id}}/"> {{this.name}} </a> <span class="divider">/</span></li>
+      {{/each}}
+      {{#if isAdm}}
+        <li><a href="javascript:" class="addChapter">新增章節</a></li>
+      {{/if}}
     </ul>
   </section>
   <section>

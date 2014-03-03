@@ -1,6 +1,5 @@
 <template name="main_document">
   <div id="room_document">
-    <a id="room_document_top" />
     <aside id="room_document_nav">
       <h4>
         目錄
@@ -10,57 +9,50 @@
       </h4>
       <ul class="nav" style="padding:0;">
         {{#each rootDocument}}
-          {{#isolate}}
-            {{> main_document_nav}}
-          {{/isolate}}
+          {{> main_document_nav}}
         {{/each}}
       </ul>
     </aside>
-    {{#each rootDocument}}
-      {{#isolate}}
-        {{> main_document_detail}}
-      {{/isolate}}
-    {{/each}}
+    {{#if thisDocument}}
+      {{> main_document_detail thisDocument}}
+    {{/if}}
   </div>
 </template>
 
 <template name="main_document_nav">
-  <li class="eachDocument" data-id="{{_id}}">
-    <a href="#{{_id}}">
+  <li class="eachDocument">
+    <a href="#{{this._id}}">
     {{#if hasChildren}}
       <i class="icon-folder-open"></i>
     {{else}}
       <i class="icon-chevron-right"></i>
     {{/if}}
-    {{name}}
+    {{this.name}}
     {{#if isAdm}}
       <i class="icon-plus-sign pull-right" title="在此資料下新增一筆資料"></i>
     {{/if}}
     </a>
     <ul class="nav">
       {{#each children}}
-        {{#isolate}}
-          {{> main_document_nav}}
-        {{/isolate}}
+        {{> main_document_nav}}
       {{/each}}
     </ul>
   </li>
 </template>
 
-
 <template name="main_document_detail">
   <section id="{{_id}}" class="eachDocument">
     <h5>
-      {{name}}
+      {{this.name}}
       {{#if isAdm}}
         <i class="icon-arrow-down pull-right" title="將此筆資料後移"></i>
         <i class="icon-arrow-up pull-right" title="將此筆資料前移"></i>
         <i class="icon-trash pull-right" title="刪除此筆資料"></i>
-        <i class="icon-pencil pull-right" title="修改資料標題"></i>
+        <i class="icon-pencil pull-right" title="編輯此筆資料"></i>
       {{/if}}
     </h5>
-    <div {{#if isAdm}} class="detail"{{/if}}>
-      {{{detail}}}
+    <div class="detail">
+      {{{this.detail}}}
     </div>
     <div class="submit">
       <button class="btn btn-primary">送出</button>
@@ -70,14 +62,5 @@
       <time>本文最後由 {{getNick user}} 於 {{timeChinese time}} 編輯</time>
     </footer>
     <hr />
-    <div class="tool">
-      <a href="#room_document_top">Top</a>
-    </div>
-    <hr />
   </section>
-  {{#each children}}
-    {{#isolate}}
-      {{> main_document_detail}}
-    {{/isolate}}
-  {{/each}}
 </template>
