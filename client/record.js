@@ -90,6 +90,7 @@ Template.main_record.events(
 )
 
 //section template
+var goHash = _.debounce(function() { if (location.hash) { location.href = location.hash; } }, 500);
 Template.chapter_section.helpers(
   {'allParagraph' :
       function() {
@@ -98,7 +99,7 @@ Template.chapter_section.helpers(
           , section = this._id
           , cursor  = DB.record.find({'room' : room, 'chapter' : chapter, 'section' : section }, {'sort' : {'sort' : 1}})
           ;
-
+        goHash();
         return DB.record.find({'room' : room, 'chapter' : chapter, 'section' : section }, {'sort' : {'sort' : 1}});
       }
   ,'mapLink'       :
