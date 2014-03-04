@@ -243,3 +243,31 @@ Template.main_document_detail.events(
       }
   }
 )
+Template.main_document_detail.rendered =
+  function() {
+    var _this = this;
+    _this.computation =
+        Deps.autorun(function () {
+          var RouterParams = Session.get('RouterParams')
+            , detail       =
+                  DB.document.find(
+                    RouterParams.hash
+                  , {'fields' :
+                        {'detail' : 1
+                        }
+                    }
+                  )
+                  .fetch()
+            ;
+          if (detail.length > 0) {
+            _this.find('div.detail').innerHTML = detail[0]['detail'];
+          }
+          else {
+            _this.find('div.detail').innerHTML = '';
+          }
+        });
+  };
+Template.main_document_detail.destroyed =
+  function () {
+    this.computation.stop();
+  };
