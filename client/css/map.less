@@ -1,5 +1,61 @@
 @import "lib/variables.lessimport";
 
+#map_message {
+  overflow-y: auto;
+}
+
+/*
+#point_pos {
+  position: absolute;
+  background: @wellBackground;
+  padding: 5px 0 5px 0;
+  min-width: 140px;
+  text-align: center;
+}
+*/
+
+#map_editForm {
+  i {
+    cursor: pointer;
+  }
+}
+
+#map {
+  svg {
+    text {
+      fill:#000000;
+      text-anchor: middle;
+    }
+    g.girdLabel {
+      rect {
+        fill:@wellBackground;
+      }
+    }
+  }
+}
+
+#map_info {
+  div.round {
+    text-align: center;
+    padding: 3px;
+  }
+  header {
+    background: darken(@wellBackground, 30%);
+    cursor: pointer;
+    font-weight: bold;
+    padding: 5px;
+  }
+
+  section {
+    header {
+      background: @wellBackground;
+    }
+    div.content {
+      padding: 3px;
+    }
+  }
+}
+
 #map_info {
   section {
     header {
@@ -57,21 +113,7 @@
   }
 }
 
-#map_wrapper {
-  padding: 0;
-  overflow-x: auto;
-  overflow-y: auto;
-  position: relative;
-}
-
-#point_pos {
-  position: absolute;
-  background: @wellBackground;
-  padding: 5px 0 5px 0;
-  min-width: 140px;
-  text-align: center;
-}
-
+/*
 #map_table {
   margin: 40px 20px 20px 20px;
   border-collapse: collapse;
@@ -126,3 +168,4 @@
   }
 
 }
+*/

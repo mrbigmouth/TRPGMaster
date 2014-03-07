@@ -3,10 +3,10 @@ DB.map.allow(
       function(userID, doc) {
         var result = false;
 
-        doc._id = (Date.now() + '');
+        doc.time = Date.now()
         doc.user = userID;
 
-        if (userID === TRPG.adm || doc.room === TRPG.public._id) {
+        if (userID === TRPG.adm || doc.room === TRPG.public.id) {
           result = true;
         }
         else {
@@ -15,15 +15,7 @@ DB.map.allow(
             result = true;
           }
         }
-        if (result) {
-          if (doc.section) {
-            DB.record.update(doc.section, {'$set' : {'time' : Date.now() } });
-          }
-          return true;
-        }
-        else {
-          return false;
-        }
+        return result;
       }
   ,'update' :
       function(userID, doc) {
@@ -45,23 +37,6 @@ DB.map.allow(
       }
   }
 );
-
-Meteor.publish('map', function (chapterID) {
-  var userID  = this.userID
-    , chapter = DB.record.findOne(chapterID)
-    , room
-    ;
-  if (chapter) {
-    room = DB.room.findOne(chapter.room);
-  }
-  else {
-    this.error(new Meteor.Error(404, '錯誤的訂閱參數!', '錯誤的訂閱參數!'));
-  }
-  if (! room && ! room.public && userID !== TRPG.adm && room.adm.indexOf(userID) === -1) {
-    this.error(new Meteor.Error(401, '權限不足!', '權限不足!'));
-  }
-  return DB.map.find({'chapter' : chapterID});
-});
 
 DB.map_grid.allow(
   {'insert' :
@@ -250,11 +225,22 @@ DB.map_detail.allow(
   }
 )
 
-Meteor.publish('map_detail', function (roomID, mapID, round) {
+Meteor.publish('mapList', function (chapter) {
+  return DB.map.find(
+          {'chapter' : chapter}
+        , {'fields'  : {'_id' : 1, 'chapter' : 1,'name' : 1}
+          }
+        );
+});
+
+
+Meteor.publish('map', function (roomID, mapID, round) {
   var userID = this.userID
     , room   = DB.room.findOne(roomID)
     , map    = DB.map.findOne(mapID)
+    , round
     ;
+
   if (! map || ! room ||  map.room !== roomID) {
     this.error(new Meteor.Error(404, '錯誤的訂閱參數!', '錯誤的訂閱參數!'));
   }
@@ -265,66 +251,6 @@ Meteor.publish('map_detail', function (roomID, mapID, round) {
   return [ DB.map.find(mapID)
          , DB.map_grid.find({'map' : mapID, 'round' : round})
          , DB.map_detail.find({'map' : mapID, 'round' : round})
+         , DB.message_all.find({'chapter' : map.chapter, 'type' : {'$in' : ['outside', 'dice', 'chat']} })
          ];
 });
-
-//繼承地圖
-Meteor.methods(
-  {'ExtendMap' :
-      function(mapID, sectionID) {
-        var userID = this.userId
-          , map
-          , room
-          , section
-          ;
-        if (mapID !== null) {
-          map = DB.map.findOne(mapID);
-          if (! map) {
-            throw new Meteor.Error(404, '查無地圖!', '查無地圖!');
-          }
-          room = DB.room.findOne(map.room);
-          if (! room || room.adm.indexOf(userID) === -1) {
-            throw new Meteor.Error(401, '權限不足!', '權限不足!');
-          }
-          map._id = (Date.now() + '');
-          map.round += 1;
-          DB.map.insert(map, function() {
-            DB.map_grid.find({'map' : mapID}).forEach(function(grid) {
-              grid._id = grid.x + ',' + grid.y + '@' + map.round + '@' + map._id;
-              grid.round = map.round;
-              grid.map = map._id;
-              DB.map_grid.insert(grid, _.identity);
-            });
-          });
-        }
-        else if (sectionID !== null) {
-          section = DB.record.findOne(sectionID);
-          if (! section) {
-            throw new Meteor.Error(404, '查無章節!', '查無章節!');
-          }
-          room = DB.room.findOne(section.room);
-          console.log(room.adm, userID);
-          if (! room || room.adm.indexOf(userID) === -1) {
-            throw new Meteor.Error(401, '權限不足!', '權限不足!');
-          }
-          map =
-              {'_id'     : (Date.now() + '')
-              ,'room'    : section.room
-              ,'chapter' : section.chapter
-              ,'section' : section._id
-              ,'name'    : '「' + section.name + '」戰場地圖'
-              ,'sizeX'   : 10
-              ,'sizeY'   : 10
-              ,'light'   : 100
-              ,'round'   : 1
-              };
-          DB.map.insert(map, _.identity);
-        }
-        else {
-          throw new Meteor.Error(404, '必須有參數!', '必須有參數!');
-        }
-
-        return map._id;
-      }
-  }
-);

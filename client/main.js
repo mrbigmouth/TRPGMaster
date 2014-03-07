@@ -16,6 +16,9 @@ Template.layout.rendered =
             ,'south__togglerTip_open'   : '關閉訊息列'
             ,'south__togglerTip_closed' : '開啟訊息列'
             ,'south__size'              : 100
+            ,'west__togglerTip_open'    : '關閉資訊列'
+            ,'west__togglerTip_closed'  : '開啟資訊列'
+            ,'west__size'               : 300
             }
         ;
       $('body').layout( layoutOption );

@@ -9,7 +9,11 @@ Router.map(function () {
         function() {
           var params = this.params
             ;
-          return Meteor.subscribe('chapter', params.room, params.chapter, (params.hash || ''));
+          return [
+            Meteor.subscribe('chapter', params.room, params.chapter, (params.hash || ''))
+          , Meteor.subscribe('mapList', params.chapter)
+          ]
+          ;
         }
     ,'after'     :
         function() {
@@ -92,7 +96,7 @@ Template.main_record.events(
 //section template
 var goHash = _.debounce(function() { if (location.hash) { location.href = location.hash; } }, 500);
 Template.chapter_section.helpers(
-  {'allParagraph' :
+  {'allParagraph'   :
       function() {
         var room    = this.room
           , chapter = this.chapter
@@ -102,22 +106,12 @@ Template.chapter_section.helpers(
         goHash();
         return DB.record.find({'room' : room, 'chapter' : chapter, 'section' : section }, {'sort' : {'sort' : 1}});
       }
-  ,'mapLink'       :
-      function() {
-        var map = DB.map.findOne({'section' : this._id});
-        if (map) {
-          return '/map/' + this.room + '/' + map._id + '/';
-        }
-        else {
-          return '';
-        }
-      }
-  ,'emptyParagraph':
+  ,'emptyParagraph' :
       function() {
         return {};
       }
-  ,'isAdm'         : TOOL.userIsAdm
-  ,'isPlayer'      : TOOL.userIsPlayer
+  ,'isAdm'          : TOOL.userIsAdm
+  ,'isPlayer'       : TOOL.userIsPlayer
   }
 );
 Template.chapter_section.events(
@@ -187,8 +181,7 @@ Template.chapter_section.events(
         msg = window.prompt('請輸入場外發言：');
         if (msg) {
           DB.message_all.insert(
-            {'user'    : Meteor.userId()
-            ,'room'    : insData.room
+            {'room'    : insData.room
             ,'chapter' : insData.chapter
             ,'section' : section
             ,'type'    : 'outside'
@@ -198,21 +191,16 @@ Template.chapter_section.events(
         }
       }
   //新增地圖
-  ,'click aside a.map' :
+  ,'click aside a.createMap' :
       function(e, ins) {
-        var $link   = $(e.currentTarget);
-
-        if ($link.attr('href')) {
-          e.stopImmediatePropagation();
-          return true;
-        }
-        else {
-          e.preventDefault();
-        }
-        var section = DB.record.findOne(ins.firstNode.id)
+        var $link   = $(e.currentTarget)
+          , section = ins.data
           , maps    = DB.map.find({'chapter' : section.chapter}).fetch()
+          , href    = 
+              function(mapID) {
+                return '/room/' + section.room + '/' + section.chapter + '/map/' + mapID + '/';
+              }
           ;
-
         //若不存在地圖且為點擊者為ADM，嘗試開新地圖
         if (TOOL.userIsAdm() && window.confirm('你確定要為章節「' + section.name + '」編修戰場地圖？')) {
           var msgs  =
@@ -223,48 +211,62 @@ Template.chapter_section.events(
                     })
                 .value()
             , choice
-            , data
+            , linkMap
             ;
-          
-          msgs.unshift('請選擇繼承地圖或開新地圖：', '0)不繼承舊地圖，開新地圖');
-          msgs = msgs.join('\r\n');
-          choice = window.prompt(msgs, 0);
-          if (choice !== null && ! isNaN(choice)) {
-            choice = parseInt(choice, 10) - 1;
-            if (choice !== 0 && (data = maps[ choice ])) {
-              Meteor.apply('ExtendMap', [ data._id ], function(err, mapID) {
-                if (err) {
-                  console.log(err);
+
+          msgs.unshift('請指定地圖或開新地圖：', '0)為此章節開新地圖');
+          choice = window.prompt(msgs.join('\r\n'), 0);
+          if (choice === null) {
+            return false;
+          }
+          //開新地圖
+          if (choice == '0') {
+            var mapData =
+                {'_id'     : section._id
+                ,'room'    : section.room
+                ,'chapter' : section.chapter
+                ,'section' : section._id
+                ,'round'   : 1
+                ,'sizeX'   : 10
+                ,'sizeY'   : 10
+                ,'light'   : 100
                 }
-                else {
-                  var href = '/map/' + section.room + '/' + mapID + '/';
-                  $link.attr('href', href);
-                  window.open(href, 'map');
-                }
-              });
+              ;
+            mapData.name = window.prompt('請輸入地圖名稱：', section.name + '戰場地圖');
+            if (mapData.name === null) {
+              return false;
             }
-            else {
-              Meteor.apply(
-                'ExtendMap'
-              , [ null
-                , section._id
-                ]
-              , function(err, mapID) {
-                  if (err) {
-                    console.log(err);
-                  }
-                  else {
-                    var href = '/map/' + section.room + '/' + mapID + '/';
-                    $link.attr('href', href);
-                    window.open(href, 'map');
-                  }
+            DB.map.insert(mapData, function() {
+              DB.message_all.insert(
+                {'room'    : section.room
+                ,'chapter' : section.chapter
+                ,'section' : section._id
+                ,'type'    : 'room'
+                ,'msg'     : '建立了新地圖「' + mapData.name + '」'
                 }
               );
-            }
+              DB.record.update(section._id, {'$set' : {'map' : section._id} });
+            });
           }
-        }
-        else {
-          alert('本章節目前無地圖！');
+          //指定地圖
+          else {
+            //輸入值錯誤
+            if (isNaN(choice) || choice === null) {
+              return false;
+            }
+            //獲取要指定的地圖
+            choice = parseInt(choice, 10) - 1;
+            linkMap = maps[ choice ];
+            //指定地圖
+            DB.record.update(
+              section._id
+            , {'$set' : {'map' : linkMap._id} }
+            , function() {
+                //指定地圖並開視窗
+                window.open(href( linkMap._id ), 'map');
+              }
+            );
+          }
         }
       }
   //新增段落

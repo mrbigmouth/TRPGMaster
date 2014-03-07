@@ -155,16 +155,15 @@ Meteor.publish('chapter', function (room, chapter, sectionID) {
   return [
     DB.record.find(secionFilter)
   //已訂閱章節下的所有擲骰跟場外訊息
-  , DB.message_all.find({'chapter' : chapter, 'section' : {'$in' : sectionIds}, 'type' : {'$in' : ['outside', 'dice']}})
+  , DB.message_all.find({'chapter' : chapter, 'type' : {'$in' : ['outside', 'dice']}})
   ];
 });
 
 
-Meteor.publish('section', function (section) {
-  console.log('subscribe section:' + section);
+Meteor.publish('section', function (section) {;
   return [
     DB.record.find(section)
-  , DB.message_all.find({'section' : section})
+  //, DB.message_all.find({'section' : section})
   ];
 });
 

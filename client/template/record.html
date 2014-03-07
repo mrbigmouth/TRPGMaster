@@ -18,7 +18,7 @@
 </template>
 
 <template name="chapter_section">
-  <section id="{{_id}}">
+  <section id="{{this._id}}">
     <header>
       <h2>
         {{this.name}}
@@ -43,7 +43,13 @@
         {{#if isPlayer}}
           <a href="javascript:" class="dice" title="進行擲骰，並紀錄在本章節尾部">擲骰</a>
         {{/if}}
-        <a href="{{mapLink}}" class="map" title="查看與本章節有關的戰場地圖" target="_blank">地圖</a>
+        {{#if this.map}}
+          <a href="/room/{{this.room}}/{{this.chapter}}/map/{{this.map}}/" title="查看地圖" target="_blank">地圖</a>
+        {{else}}
+          {{#if isAdm}}
+            <a href="javascript:" class="createMap" title="創建或指定本章節的地圖">地圖</a>
+          {{/if}}
+        {{/if}}
         <a href="javascript:" class="top">回到頁首</a>
       </aside>
       <aside class="outside">
@@ -98,7 +104,7 @@
             {{#if this.isHide}}
               <span class="badge badge-inverse">暗骰</span>
             {{/if}}
-            <span>{{getNick this.user}}為{{this.who}}擲了一次{{this.name}}骰{{#if this.note}}（{{this.note}}）{{/if}} {{this.diceResult}}</span>
+            <span>{{getNick this.user}}為{{this.who}}擲了一次{{this.name}}骰{{#if this.note}}（{{this.note}}）{{/if}} {{diceResult}}</span>
           {{else}}
             <span>擲骰結果載入中...</span>
           {{/if}}

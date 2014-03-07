@@ -1,22 +1,46 @@
-<template name="main_map">
-  {{> map_wrapper}}
-  <div class="ui-layout-west" id="childLayout_west">
-    {{> map_info}}
-  </div>
+<template name="map_message">
+<ul id="map_message" class="ui-layout-south">
+  {{#each allMsgs}}
+    <li>
+      <span>{{timeChinese this.time}}</span>
+      <span class="badge badge-success">{{roomName this.room}}</span>
+      <span class="badge">{{typeChinese this.type}}</span>
+      {{#if typeChat}}
+        <span>{{getNick this.user}}：</span>
+        <span>{{this.msg}}</span>
+      {{/if}}
+      {{#if typeSystem}}
+        <span>{{getNick this.user}}</span>
+        <span>{{this.msg}}</span>
+      {{/if}}
+      {{#if typeDice}}
+        {{#if this.result}}
+          {{#if this.isHide}}
+            <span class="badge badge-inverse">暗骰</span>
+          {{/if}}
+          <span>{{getNick user}}為{{this.who}}擲了一次{{this.name}}骰{{#if this.note}}（{{this.note}}）{{/if}} {{diceResult}}</span>
+        {{else}}
+          <span>擲骰結果載入中...</span>
+        {{/if}}
+      {{/if}}
+    </li>
+  {{/each}}
+</ul>
 </template>
 
 <body>
+  <!-- 編輯modal form -->
   {{> map_editForm}}
 </body>
-<template name="map_wrapper">
-  <div class="ui-layout-center" id="map_wrapper">
-    <div id="point_pos" style="left: 0; top: 0;">
-      指標位置：(<span class="x">?</span>,<span class="y">?</span>)
-    </div>
-    {{> map_table}}
+
+<template name="main_map">
+  <!-- 地圖主區塊 -->
+  <div class="ui-layout-center" id="map">
+    {{> map_svg mapData}}
   </div>
 </template>
 
+<!-- 編輯modal form -->
 <template name="map_editForm">
   <form action="javascript:" id="map_editForm" class="modal hide fade form-horizontal">
     <div class="modal-header">
@@ -25,46 +49,157 @@
     </div>
     <div class="modal-body">
       {{#each editing}}
-        <div class="editing">
-          {{type}}
+        <div>
+          <i class="icon-ban-circle pull-right" title="取消修改"></i>
+          {{#if this._id}}
+            <i class="icon-trash pull-right" title="刪除資料"></i>
+          {{/if}}
+          <i class="icon-ok pull-right" title="儲存修改"></i>
+          {{#if isType 'affect' this.type}}
+            {{> map_info_affect_edit}}
+          {{/if}}
+          {{#if isType 'land' this.type}}
+          {{/if}}
+          {{#if isType 'unit' this.type}}
+          {{/if}}
         </div>
       {{/each}}
     </div>
   </form>
 </template>
 
+<!-- 地圖 -->
+<template name="map_svg">
+  <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{{totalWidth}}" height="{{totalHeight}}">
+    <svg x="{{marginLeft}}" y="{{marginTop}}">
+      <g transform="{{transform}}">
+        <g class="girdLabel">
+          {{#each gridLabel}}
+            <rect x="{{left}}" y="{{top}}" width="{{width}}" height="{{height}}"></rect>
+            <text x="{{textLeft}}" y="{{textTop}}">{{text}}</text>
+          {{/each}}
+          {{#each grids}}
+          {{/each}}
+        </g>
+      </g>
+    </svg>
+  </svg>
+</template>
+<template name="map_grid">
+</template>
+
+<!-- 資訊面板 -->
 <template name="map_info">
-  <form action="javascript:" class="form-inline" id="map_info">
-    <div>
-      {{#isolate}}
-        {{#if prevRound}}
-          <a href="/map/{{roomID}}/{{mapID}}/{{prevRound}}/" class="pull-left">上一輪</a>
+  <form action="javascript:" class="form-inline ui-layout-west" id="map_info">
+    <!-- 當前輪數，前後輪連結 -->
+    <div class="round">
+      {{#if prevRound}}
+        <a href="{{prevRound}}" class="pull-left">上一輪</a>
+      {{/if}}
+      <a href="javascript:" class="go">第{{nowRound}}輪</a>
+      {{#if nextRound}}
+        <a href="{{nextRound}}" class="pull-right">下一輪</a>
+      {{else}}
+        {{#if isAdm}}
+          <a href="javascript:" class="pull-right newRound">推進下一輪</a>
         {{/if}}
-        當前回合：{{nowRound}}
-        {{#if vextRound}}
-          <a href="/map/{{roomID}}/{{mapID}}/{{nextRound}}/" class="pull-right">下一輪</a>
-        {{/if}}
-      {{/isolate}}
+      {{/if}}
     </div>
     <section>
-      <header>
-        檢視設定
-      </header>
+      <header>檢視設定</header>
       <div class="content" style="display:none;">
-        <p class="grid_size">
-          地圖方格大小：
-          <input type="number" class="number grid_size" name="grid_size" min="20" step="1" />
-        </p>
-        <p class="unit_size">
-          單位標誌大小：
-          <input type="number" class="number unit_size" name="unit_size" min="20" step="1" />
-        </p>
-        <p class="change_view">
-          切換視角：
-          <select class="change_view"></select>
-        </p>
+        地圖顯示尺寸：<input type="number" class="span1 zoom" min="1" step="1" value="100" />％
       </div>
     </section>
+    <section>
+      <header>效應資訊
+        {{#if isAdm}}
+          <a href="javascript:" class="pull-right" data-fn="add" data-type="affect" title="新增效應">新增</a>
+          <a href="javascript:" class="pull-right" data-fn="editAll" data-type="affect" title="編輯全部效應">編輯全部</a>
+          <a href="javascript:" class="pull-right" data-fn="edit" data-type="affect" title="編輯已展開的效應">編輯所選</a>
+        {{/if}}
+      </header>
+      <div class="content" style="display:none;">
+        {{#if hasDetail 'affect'}}
+          {{#each allDetail 'affect'}}
+            {{> map_info_affect}}
+          {{/each}}
+        {{else}}
+          目前沒有任何資料！
+        {{/if}}
+      </div>
+    </section>
+  </form>
+</template>
+
+<!-- 當前輪數，前後輪連結 -->
+<template name="map_info_round">
+  <div id="map_info_round"></div>
+</template>
+<!-- 顯示效應資訊 -->
+<template name="map_info_affect">
+  <section data-id="{{this._id}}">
+    <header>
+      {{this.name}}
+    </header>
+    <div class="content" style="display:none;">
+      效應中止回合：{{this.round}}
+      <br />
+      {{{this.showDesc}}}
+      {{#if isAdm}}
+        <br />
+        {{{this.hideDesc}}}
+      {{/if}}
+    </div>
+  </section>
+</template>
+<!-- 編輯效應資訊 -->
+<template name="map_info_affect_edit">
+  名稱：{{this.name}}
+  <br />
+  效應中止回合：{{this.round}}
+  <br />
+  {{{this.showDesc}}}
+  <br />
+  {{{this.hideDesc}}}
+</template>
+
+<template name="map_table">
+{{#if loaded}}
+  <table id="map_table">
+    <thead>
+      <th>Y\X</th>
+      {{#each sizeX}}
+        <th>{{this}}</th>
+      {{/each}}
+      <th>X/Y</th>
+    </thead>
+    <tbody>
+      {{#each sizeY}}
+        <tr>
+          <th>{{this}}</th>
+          {{#each GridsRow this}}
+            {{#isolate}}
+              <td data-x="{{x}}" data-y="{{y}}" data-pos="{{x}},{{x}}">{{x}},{{y}}</td>
+            {{/isolate}}
+          {{/each}}
+          <th>{{this}}</th>
+        </tr>
+      {{/each}}
+    </tbody>
+    <tfoot>
+      <th>Y/X</th>
+      {{#each sizeX}}
+        <th>{{this}}</th>
+      {{/each}}
+      <th>X\Y</th>
+    </tfoot>
+  </table>
+{{/if}}
+</template>
+
+<!--
+  {{#if loaded}}
     {{#isolate}}
       <section>
         <header>
@@ -159,39 +294,5 @@
         </div>
       </section>
     {{/isolate}}
-  </form>
-</template>
-
-<template name="map_table">
-{{#if loaded}}
-  <table id="map_table">
-    <thead>
-      <th>Y\X</th>
-      {{#each sizeX}}
-        <th>{{this}}</th>
-      {{/each}}
-      <th>X/Y</th>
-    </thead>
-    <tbody>
-      {{#each sizeY}}
-        <tr>
-          <th>{{this}}</th>
-          {{#each GridsRow this}}
-            {{#isolate}}
-              <td data-x="{{x}}" data-y="{{y}}" data-pos="{{x}},{{x}}">{{x}},{{y}}</td>
-            {{/isolate}}
-          {{/each}}
-          <th>{{this}}</th>
-        </tr>
-      {{/each}}
-    </tbody>
-    <tfoot>
-      <th>Y/X</th>
-      {{#each sizeX}}
-        <th>{{this}}</th>
-      {{/each}}
-      <th>X\Y</th>
-    </tfoot>
-  </table>
-{{/if}}
-</template>
+  {{/if}}
+  -->
