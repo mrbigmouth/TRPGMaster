@@ -49,23 +49,199 @@
     </div>
     <div class="modal-body">
       {{#each editing}}
-        <div>
+        <div class="eachEdit">
           <i class="icon-ban-circle pull-right" title="取消修改"></i>
           {{#if this._id}}
-            <i class="icon-trash pull-right" title="刪除資料"></i>
+            <i class="icon-trash pull-right" title="刪除這筆資料"></i>
           {{/if}}
           <i class="icon-ok pull-right" title="儲存修改"></i>
           {{#if isType 'affect' this.type}}
-            {{> map_info_affect_edit}}
+            {{> map_edit_affect}}
           {{/if}}
           {{#if isType 'land' this.type}}
+            {{> map_edit_land}}
           {{/if}}
           {{#if isType 'unit' this.type}}
+            {{> map_edit_unit}}
           {{/if}}
         </div>
       {{/each}}
     </div>
   </form>
+</template>
+<!-- 編輯效應資訊 -->
+<template name="map_edit_affect">
+  <div class="control-group">
+    <label class="control-label" for="name"><strong>效應名稱：</strong></label>
+    <div class="controls">
+      <input type="text" name="name" value="{{this.name}}" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="until"><strong>效應中止回合：</strong></label>
+    <div class="controls">
+      <input type="number" name="until" class="span1" value="{{this.until}}" min="0" step="1" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="showDesc"><strong>顯示描述：</strong></label>
+    <div class="controls">
+      <textarea name="showDesc">{{this.showDesc}}</textarea>
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="hideDesc"><strong>隱藏資訊：</strong></label>
+    <div class="controls">
+      <textarea name="hideDesc">{{this.hideDesc}}</textarea>
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="unit"><strong>影響目標：</strong></label>
+    <div class="controls">
+      <select name="unit" multiple="multiple">
+        {{#each units}}
+          {{#if this.selected}}
+            <option value="{{this._id}}" selected="selected">{{this.name}}</option>
+          {{else}}
+            <option value="{{this._id}}">{{this.name}}</option>
+          {{/if}}
+        {{/each}}
+      </select>
+    </div>
+  </div>
+</template>
+<!-- 編輯地型資訊 -->
+<template name="map_edit_land">
+  <div class="control-group">
+    <label class="control-label" for="name"><strong>地型名稱：</strong></label>
+    <div class="controls">
+      <input type="text" name="name" value="{{this.name}}" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="show"><strong>顯示類別：</strong></label>
+    <div class="controls">
+      <select name="show">
+        {{#each showList}}
+          {{#if selected}}
+            <option value="{{value}}" selected="selected">{{name}}</option>
+          {{else}}
+            <option value="{{value}}">{{name}}</option>
+          {{/if}}
+        {{/each}}
+      </select>
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="color"><strong>色彩：</strong></label>
+    <div class="controls">
+      <input type="text" name="color" class="color" value="{{this.color}}" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="light"><strong>光源：</strong></label>
+    <div class="controls">
+      <input type="number" name="light" class="span1" value="{{this.light}}" min="0" step="1" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="minusView"><strong>阻礙視線：</strong></label>
+    <div class="controls">
+      <input type="number" name="minusView" class="span1" value="{{this.minusView}}" min="0" max="100" step="1" />％
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="showDesc"><strong>顯示描述：</strong></label>
+    <div class="controls">
+      <textarea name="showDesc">{{this.showDesc}}</textarea>
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="hideDesc"><strong>隱藏資訊：</strong></label>
+    <div class="controls">
+      <textarea name="hideDesc">{{this.hideDesc}}</textarea>
+    </div>
+  </div>
+</template>
+<!-- 編輯單位資訊 -->
+<template name="map_edit_unit">
+  <div class="control-group">
+    <label class="control-label" for="name"><strong>單位名稱：</strong></label>
+    <div class="controls">
+      <input type="text" name="name" value="{{this.name}}" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="token"><strong>代表物：</strong></label>
+    <div class="controls">
+      <input type="text" class="span2" name="token" value="{{this.token}}" maxlength="2" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="character"><strong>玩家角色：</strong></label>
+    <div class="controls">
+      <select name="character">
+        <option value="">非玩家角色</option>
+        {{#each allCharacter}}
+          {{#if this.selected}}
+            <option value="{{this._id}}" selected="selected">{{this.name}}</option>
+          {{else}}
+            <option value="{{this._id}}">{{this.name}}</option>
+          {{/if}}
+        {{/each}}
+      </select>
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="hp"><strong>生命值：</strong></label>
+    <div class="controls">
+      <input type="number" name="hp" class="span1" value="{{this.hp}}" min="1" step="1" />
+      ／
+      <input type="number" name="maxHp" class="span1" value="{{this.maxHp}}" min="1" step="1" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="light"><strong>攜帶光源：</strong></label>
+    <div class="controls">
+      <input type="number" name="light" class="span1" value="{{this.light}}" min="0" step="1" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="sightNormal"><strong>一般視覺：</strong></label>
+    <div class="controls">
+      <input type="number" name="sightNormal" class="span1" value="{{this.sightNormal}}" min="0" step="1" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="sightLowLight"><strong>微光視覺：</strong></label>
+    <div class="controls">
+      <input type="number" name="sightLowLight" class="span1" value="{{this.sightLowLight}}" min="0" step="1" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="sightDark"><strong>黑暗視覺：</strong></label>
+    <div class="controls">
+      <input type="number" name="sightDark" class="span1" value="{{this.sightDark}}" min="0" step="1" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="sightBlind"><strong>盲目視覺：</strong></label>
+    <div class="controls">
+      <input type="number" name="sightBlind" class="span1" value="{{this.sightBlind}}" min="0" step="1" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="showDesc"><strong>顯示描述：</strong></label>
+    <div class="controls">
+      <textarea name="showDesc">{{this.showDesc}}</textarea>
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label" for="hideDesc"><strong>隱藏資訊：</strong></label>
+    <div class="controls">
+      <textarea name="hideDesc">{{this.hideDesc}}</textarea>
+    </div>
+  </div>
 </template>
 
 <!-- 地圖 -->
@@ -91,6 +267,7 @@
 <!-- 資訊面板 -->
 <template name="map_info">
   <form action="javascript:" class="form-inline ui-layout-west" id="map_info">
+    <h5>{{mapName}}</h5>
     <!-- 當前輪數，前後輪連結 -->
     <div class="round">
       {{#if prevRound}}
@@ -115,8 +292,8 @@
       <header>效應資訊
         {{#if isAdm}}
           <a href="javascript:" class="pull-right" data-fn="add" data-type="affect" title="新增效應">新增</a>
-          <a href="javascript:" class="pull-right" data-fn="editAll" data-type="affect" title="編輯全部效應">編輯全部</a>
-          <a href="javascript:" class="pull-right" data-fn="edit" data-type="affect" title="編輯已展開的效應">編輯所選</a>
+          <a href="javascript:" class="pull-right" data-fn="editAll" title="編輯全部效應">編輯全部</a>
+          <a href="javascript:" class="pull-right" data-fn="edit" title="編輯已展開的效應">編輯所選</a>
         {{/if}}
       </header>
       <div class="content" style="display:none;">
@@ -129,12 +306,46 @@
         {{/if}}
       </div>
     </section>
+    <section>
+      <header>地型資訊
+        {{#if isAdm}}
+          <a href="javascript:" class="pull-right" data-fn="add" data-type="land" title="新增地型">新增</a>
+          <a href="javascript:" class="pull-right" data-fn="editAll" title="編輯全部地型">編輯全部</a>
+          <a href="javascript:" class="pull-right" data-fn="edit" title="編輯已展開的地型">編輯所選</a>
+        {{/if}}
+      </header>
+      <div class="content" style="display:none;">
+        {{#if hasDetail 'land'}}
+          {{#each allDetail 'land'}}
+            {{> map_info_land}}
+          {{/each}}
+        {{else}}
+          目前沒有任何資料！
+        {{/if}}
+      </div>
+    </section>
+    <section>
+      <header>單位資訊
+        {{#if isAdm}}
+          <a href="javascript:" class="pull-right" data-fn="add" data-type="unit" title="新增單位">新增</a>
+          <a href="javascript:" class="pull-right" data-fn="editAll" title="編輯全部單位">編輯全部</a>
+          <a href="javascript:" class="pull-right" data-fn="edit" title="編輯已展開的單位">編輯所選</a>
+        {{/if}}
+      </header>
+      <div class="content" style="display:none;">
+        {{#if hasDetail 'unit'}}
+          {{#each allDetail 'unit'}}
+            {{> map_info_unit}}
+          {{/each}}
+        {{else}}
+          目前沒有任何資料！
+        {{/if}}
+      </div>
+    </section>
+    {{#if isAdm}}
+      {{> map_info_edit}}
+    {{/if}}
   </form>
-</template>
-
-<!-- 當前輪數，前後輪連結 -->
-<template name="map_info_round">
-  <div id="map_info_round"></div>
 </template>
 <!-- 顯示效應資訊 -->
 <template name="map_info_affect">
@@ -143,61 +354,62 @@
       {{this.name}}
     </header>
     <div class="content" style="display:none;">
-      效應中止回合：{{this.round}}
-      <br />
-      {{{this.showDesc}}}
+      效應中止回合：{{untilRound this.until}}
+      <div class="pre">{{this.showDesc}}</div>
       {{#if isAdm}}
-        <br />
-        {{{this.hideDesc}}}
+        <div class="pre">{{this.hideDesc}}</div>
       {{/if}}
     </div>
   </section>
 </template>
-<!-- 編輯效應資訊 -->
-<template name="map_info_affect_edit">
-  名稱：{{this.name}}
-  <br />
-  效應中止回合：{{this.round}}
-  <br />
-  {{{this.showDesc}}}
-  <br />
-  {{{this.hideDesc}}}
+<!-- 顯示地型資訊 -->
+<template name="map_info_land">
+  <section data-id="{{this._id}}">
+    <header>
+      <span style="{{landStyle}}" class="land"></span>：{{this.name}}
+    </header>
+    <div class="content" style="display:none;">
+      <div class="pre">{{this.showDesc}}</div>
+      {{#if isAdm}}
+        <div class="pre">{{this.hideDesc}}</div>
+      {{/if}}
+    </div>
+  </section>
 </template>
-
-<template name="map_table">
-{{#if loaded}}
-  <table id="map_table">
-    <thead>
-      <th>Y\X</th>
-      {{#each sizeX}}
-        <th>{{this}}</th>
-      {{/each}}
-      <th>X/Y</th>
-    </thead>
-    <tbody>
-      {{#each sizeY}}
-        <tr>
-          <th>{{this}}</th>
-          {{#each GridsRow this}}
-            {{#isolate}}
-              <td data-x="{{x}}" data-y="{{y}}" data-pos="{{x}},{{x}}">{{x}},{{y}}</td>
-            {{/isolate}}
-          {{/each}}
-          <th>{{this}}</th>
-        </tr>
-      {{/each}}
-    </tbody>
-    <tfoot>
-      <th>Y/X</th>
-      {{#each sizeX}}
-        <th>{{this}}</th>
-      {{/each}}
-      <th>X\Y</th>
-    </tfoot>
-  </table>
-{{/if}}
+<!-- 顯示單位資訊 -->
+<template name="map_info_unit">
+  <section data-id="{{this._id}}">
+    <header>
+      {{this.token}}：{{this.name}}<span class="maxHp"><span class="hp" style="{{hpStyle this.hp this.maxHp}}"></span></span>
+    </header>
+    <div class="content" style="display:none;">
+      <div class="pre">{{this.showDesc}}</div>
+      {{#if isAdm}}
+        <div class="pre">{{this.hideDesc}}</div>
+      {{/if}}
+    </div>
+  </section>
 </template>
-
+<!-- 編輯地圖資訊 -->
+<template name="map_info_edit">
+  <section>
+    <header>編輯地圖</header>
+    <div class="content mapEdit" style="display:none;">
+      {{#with mapData}}
+        <div>地圖名稱： <input type="text" name="name" value="{{this.name}}" /></div>
+        <div>地圖大小：
+          <input type="number" name="sizeX" class="span1" value="{{this.sizeX}}" />
+          Ｘ
+          <input type="number" name="sizeY" class="span1" value="{{this.sizeY}}" />
+        </div>
+        <div>自然光源： <input type="number" name="light" class="span1" value="{{this.light}}" /></div>
+      {{/with}}
+      <div><input type="checkbox" class="editMode" />開啟編輯模式</div>
+      <div class="editMode" style="display:none;">
+      </div>
+    </div>
+  </section>
+</template>
 <!--
   {{#if loaded}}
     {{#isolate}}

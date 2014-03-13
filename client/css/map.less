@@ -18,6 +18,11 @@
   i {
     cursor: pointer;
   }
+  div.eachEdit {
+    border-bottom: 1px black solid;
+    padding-bottom: 3px;
+    margin-bottom: 3px;
+  }
 }
 
 #map {
@@ -35,6 +40,11 @@
 }
 
 #map_info {
+  h5 {
+    text-align: center;
+    background: darken(@wellBackground, 30%);
+    margin: 0;
+  }
   div.round {
     text-align: center;
     padding: 3px;
@@ -49,9 +59,39 @@
   section {
     header {
       background: @wellBackground;
+
+      span.land {
+        display: inline-block;
+        width: @baseFontSize;
+        height: @baseFontSize;
+      }
+
+      span.maxHp {
+        display: inline-block;
+        width: 100px;
+        height: @baseFontSize;
+        border : 1px solid @textColor;
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+        float: right;
+
+        span {
+          display: inline-block;
+          border-radius: 4px;
+          height: 100%;
+          position: absolute;
+          top: 0;
+          left: 0;
+        }
+      }
     }
     div.content {
       padding: 3px;
+
+      div.pre {
+        white-space: pre;
+      }
     }
   }
 }

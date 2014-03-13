@@ -12,6 +12,7 @@ Router.map(function () {
           var params = this.params;
           return [
             Meteor.subscribe('map', params.room, params.mapID)
+          , Meteor.subscribe('characterList', params.room)
           ]
         }
     ,'after'     :
@@ -173,7 +174,10 @@ Template.map_editForm.helpers(
       function() {
         var result;
         EditDeps.depend();
-
+        if (EditData.length < 1) {
+          $form.modal('hide');
+          return [];
+        }
         result = _.map(EditData, function(data) {
           if (typeof data === 'string') {
             return DB.map_detail.findOne(data);
@@ -191,18 +195,148 @@ Template.map_editForm.helpers(
 Template.map_editForm.events(
   //儲存修改
   {'click i.icon-ok' :
-      function() {
-        console.log(this);
+      function(e, ins) {
+        var data    = this
+          , $this   = $(e.currentTarget).closest('div.eachEdit')
+          , index   = $this.closest('div.modal-body').children('div.eachEdit').index($this)
+          , newData =
+              {'map'   : data.map
+              ,'round' : data.round
+              ,'type'  : data.type
+              }
+          ;
+        if (data._id) {
+          $this.find('[name]').each(function() {
+            var val  = $(this).val()
+              , name = this.name
+              ;
+            if (data[ name ] != val) {
+              newData[ name ] = val;
+            }
+          });
+          DB.map_detail.update(data._id, {'$set' : newData}, function() {
+            EditData.splice(index, 1);
+            EditDeps.changed();
+          });          
+        }
+        else {
+          $this.find('[name]').each(function() {
+            newData[ this.name ] = $(this).val();
+          });
+          debugger;
+          DB.map_detail.insert(newData, function() {
+            EditData.splice(index, 1);
+            EditDeps.changed();
+          });
+        }
       }
   //刪除資料　
   ,'click i.icon-trash' :
       function(e, ins) {
-        console.log(this);
+        var data  = this
+          , $this = $(e.currentTarget).closest('div.eachEdit')
+          , index = $this.closest('div.modal-body').children('div.eachEdit').index($this)
+          ;
+        if (confirm('確定要刪除此項資料?')) {
+          if (data._id) {
+            DB.map_detail.remove(data._id);
+          }
+          EditData.splice(index, 1);
+          EditDeps.changed();
+        }
       }
   //取消修改
   ,'click i.icon-ban-circle' :
       function(e, ins) {
-        console.log(this);
+        var data  = this
+          , $this = $(e.currentTarget).closest('div.eachEdit')
+          , index = $this.closest('div.modal-body').children('div.eachEdit').index($this)
+          ;
+        EditData.splice(index, 1);
+        EditDeps.changed();
+      }
+  }
+)
+Template.map_edit_affect.helpers(
+  {'units' :
+      function() {
+        var map      = this.map
+          , round    = this.round
+          , selected = this.unit
+          ;
+        return _.map(DB.map_detail
+                      .find(
+                        {'map'   : this.map
+                        ,'round' : this.round
+                        ,'type'  : 'unit'
+                        }
+                      , {'fields' :
+                            {'_id'   : 1
+                            ,'name'  : 1
+                            }
+                        }
+                      )
+                      .fetch()
+                    , function(unit) {
+                        return {
+                         '_id'      : unit._id
+                        ,'name'     : unit.name
+                        ,'selected' : (_.indexOf(selected, unit._id) !== -1)
+                        }
+                      }
+                    );
+      }
+  }
+)
+Template.map_edit_land.helpers(
+  {'showList' :
+      function() {
+        return [
+          {'value'    : 'land'
+          ,'name'     : '方格底色'
+          ,'selected' : (this.show === 'land')
+          }
+        , {'value'    : 'mist'
+          ,'name'     : '半透明遮蓋'
+          ,'selected' : (this.show === 'mist')
+          }
+        , {'value'    : 'wall'
+          ,'name'     : '方格色邊'
+          ,'selected' : (this.show === 'wall')
+          }
+        ]
+      }
+  }
+)
+Template.map_edit_land.rendered =
+    function() {
+      $(this.find('input.color')).minicolors();
+    }
+Template.map_edit_unit.helpers(
+  {'allCharacter' :
+      function() {
+        var params   = Session.get('RouterParams')
+          , selected = this.character
+          ;
+        return _.map(DB.character
+                      .find(
+                        {'room' : params.room
+                        }
+                      , {'fields' :
+                            {'_id'   : 1
+                            ,'name'  : 1
+                            }
+                        }
+                      )
+                      .fetch()
+                    , function(character) {
+                        return {
+                         '_id'      : character._id
+                        ,'name'     : character.name
+                        ,'selected' : (character._id === selected)
+                        }
+                      }
+                    );
       }
   }
 )
@@ -311,16 +445,21 @@ Template.map_svg.helpers(
   }
 )
 Template.map_svg.events(
-  {'click svg' :
-      function(e) {
-        Session.set('mapScale', (Session.get('mapScale') * 10 + 1) / 10);
-      }
+  {
   }
 )
 
 
 Template.map_info.helpers(
-  {'prevRound' :
+  {'mapName'   :
+      function() {
+        var params  = Session.get('RouterParams')
+          , map     = DB.map.find(params.mapID, {'fields' : {'name' : 1} }).fetch()[0]
+          , mapName = map ? map.name : ''
+          ;
+        return mapName;
+      }
+  ,'prevRound' :
       function() {
         var params = Session.get('RouterParams')
           , round  = parseInt(params.hash, 10)
@@ -416,13 +555,12 @@ Template.map_info.events(
         }
         Session.set('mapScale', value / 100);
       }
-  //新增
+  //新增與選取編輯
   ,'click header a' :
       function(e) {
         var $this  = $(e.currentTarget)
           , type   = $this.attr('data-type')
           , params = Session.get('RouterParams')
-          , map    = DB.map.findOne(params.mapID)
           , ids    = []
           , data
           ;
@@ -432,24 +570,24 @@ Template.map_info.events(
         case 'add':
           data =
             {'_id'   : ''
-            ,'map'   : map._id
-            ,'round' : map.round
+            ,'map'   : params.mapID
+            ,'round' : params.hash
             ,'type'  : $this.attr('data-type')
             }
           switch ($this.attr('data-type')) {
           case 'affect':
-            data.name   = '未命名效應';
-            data.until  = data.round;
-            data.desc   = '';
-            data.hide   = '';
-            data.affect = [];
+            data.name     = '未命名效應';
+            data.until    = 0;
+            data.showDesc = '';
+            data.hideDesc = '';
+            data.unit     = [];
             break;
           case 'land':
             data.name  = '未命名地型';
             data.show  = 'land';
             data.color = '#FFFFFF';
-            data.desc  = '';
-            data.hide  = '';
+            data.showDesc  = '';
+            data.hideDesc  = '';
             data.light = 0;
             data.shadow = 0;
             data.minusView = 0;
@@ -458,14 +596,13 @@ Template.map_info.events(
           case 'unit':
             data.name = '未命名單位';
             data.token = '？';
-            data.desc  = '';
-            data.hide  = '';
-            data.character = false;
-            data.maxhp = 10;
+            data.showDesc = '';
+            data.hideDesc = '';
+            data.character = '';
+            data.maxHp = 10;
             data.hp = 10;
             data.light = 0;
             data.shadow = 0;
-            data.minusView = 0;
             data.sightNormal = 20;
             data.sightLowLight = 0;
             data.sightDark = 0;
@@ -493,6 +630,82 @@ Template.map_info.events(
           callEditForm(ids);
           break;
         }
+      }
+  //雙擊編輯
+  ,'dblclick section header' :
+      function(e) {
+        if (TOOL.userIsAdm()) {
+          callEditForm( [ $(e.currentTarget).closest('section').attr('data-id') ] );
+        }
+      }
+  //修改地圖資訊
+  ,'change div.mapEdit input[name]' :
+      function(e, ins) {
+        var map   = ins.data
+          , $set  = {}
+          , input = e.currentTarget
+          ;
+        $set[ input.name ] = input.value;
+        DB.map.update(map._id, {'$set' : $set });
+      }
+  }
+)
+Template.map_info_affect.helpers(
+  {'untilRound' :
+      function(until) {
+        if (until <= 0) {
+          return '無';
+        }
+        else {
+          return until;
+        }
+      }
+  }
+)
+Template.map_info_land.helpers(
+  {'landStyle' :
+      function() {
+        var land  = this
+          , style = ''
+          ;
+        switch (land.show) {
+        case 'mist' :
+          style = 'background:' + land.color + ';opacity: 0.5;';
+          break;
+        case 'wall' :
+          style = 'border: 1px solid ' + land.color + ';';
+          break;
+        case 'land' :
+        default     : 
+          style = 'background:' + land.color + ';';
+          break;
+        }
+        return style;
+      }
+  }
+)
+Template.map_info_unit.helpers(
+  {'hpStyle' :
+      function(hp, maxHp) {
+        var width = hp * 100 / maxHp
+          , color   = '#00FF00'
+          ;
+        if (width <= 50) {
+          if (width <= 20) {
+            color = '#FF0000';
+          }
+          else {
+            color = '#FFFF00';
+          }
+        }
+        return 'width:' + width +'%;background:' + color + ';';
+      }
+  }
+)
+Template.map_info_edit.helpers(
+  {'mapData' :
+      function() {
+        return DB.map.findOne( Session.get('RouterParams').mapID );
       }
   }
 )
