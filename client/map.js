@@ -344,19 +344,19 @@ Template.map_edit_unit.helpers(
 //svg
 Session.setDefault('mapScale', 1);
 Template.map_svg.helpers(
-  {'totalWidth' :
+  {'totalWidth'  :
       function() {
         var scale = Session.get('mapScale')
           , sizeX = this.sizeX + 2
           ;
-        return ((sizeX * MAP.gridWidth) * scale + MAP.marginLeft) + '';
+        return (((sizeX + 1) * MAP.gridWidth) * scale + MAP.marginLeft) + '';
       }
   ,'totalHeight' :
       function() {
         var scale = Session.get('mapScale')
           , sizeY = this.sizeY + 2
           ;
-        return ((sizeY * MAP.gridHeight) * scale + MAP.marginTop) + '';
+        return (((sizeY + 1) * MAP.gridHeight) * scale + MAP.marginTop) + '';
       }
   ,'marginLeft'  :
       function() {
@@ -434,6 +434,107 @@ Template.map_svg.helpers(
             ,'height'   : MAP.gridHeight
             }
           );
+        }
+        return result;
+      }
+  ,'grids'       :
+      function() {
+        var params = Session.get('RouterParams')
+          , map    = params.mapID
+          , round  = parseInt(params.hash, 10)
+          , sizeX  = this.sizeX
+          , sizeY  = this.sizeY
+          , result = []
+          , x
+          , y
+          , gridData
+          , grid
+          , color
+          ;
+
+        for (x = 1; x <= sizeX; x += 1) {
+          for (y = 1; y <= sizeY; y += 1) {
+            gridData = DB.map_grid.findOne({'map' : map, 'round' : round, 'x' : x, 'y' : y}) || {};
+            grid =
+              {'left'   : MAP.getLeftByX(x)
+              ,'top'    : MAP.getTopByY(y)
+              ,'width'  : MAP.gridWidth
+              ,'height' : MAP.gridHeight
+              ,'fill'   : false
+              ,'mist'   : []
+              ,'unit'   : []
+              ,'wall'   : []
+              }
+
+            _.each(gridData.land, function(land) {
+              var landData = DB.map_detail.findOne(land) || {}
+                , detail
+                ;
+              switch (landData.show) {
+              case 'land' :
+                grid.fill = landData.color;
+                break;
+              case 'mist' :
+                grid.mist.push(
+                  {'style'  : 'fill:' + landData.color + ';'
+                  ,'left'   : grid.left + 1
+                  ,'top'    : grid.top + 1
+                  ,'width'  : grid.width - 2
+                  ,'height' : grid.height - 2
+                  }
+                );
+                break;
+              case 'wall' :
+                detail = gridData[ landData._id ] || {};
+                grid.wall =
+                  _.map(detail.direction, function(direction) {
+                    switch (direction) {
+                    case 'n' :
+                      return {
+                        'x1'    : grid.left
+                      , 'y1'    : grid.top
+                      , 'x2'    : grid.left + MAP.gridWidth
+                      , 'y2'    : grid.top
+                      , 'style' : 'stroke:' + landData.color + ';'
+                      };
+                    case 'e' :
+                      return {
+                        'x1'    : grid.left + MAP.gridWidth
+                      , 'y1'    : grid.top
+                      , 'x2'    : grid.left + MAP.gridWidth
+                      , 'y2'    : grid.top + MAP.gridHeight
+                      , 'style' : 'stroke:' + landData.color + ';'
+                      };
+                    case 'w' :
+                      return {
+                        'x1'    : grid.left
+                      , 'y1'    : grid.top
+                      , 'x2'    : grid.left
+                      , 'y2'    : grid.top + MAP.gridHeight
+                      , 'style' : 'stroke:' + landData.color + ';'
+                      };
+                      break;
+                    case 's' :
+                      return {
+                        'x1'    : grid.left
+                      , 'y1'    : grid.top + MAP.gridHeight
+                      , 'x2'    : grid.left + MAP.gridWidth
+                      , 'y2'    : grid.top + MAP.gridHeight
+                      , 'style' : 'stroke:' + landData.color + ';'
+                      };
+                      break;
+                    }
+                  });
+                break;
+              }
+            });
+            grid.style = '';
+            if (grid.fill) {
+              grid.style += 'fill:' + grid.fill + ';';
+            }
+
+            result.push(grid);
+          }
         }
         return result;
       }
@@ -709,246 +810,10 @@ Template.map_info_edit.helpers(
       }
   }
 )
-
-/*
-//map_wrapper
-Template.map_wrapper.events(
-  //捲軸移動時同步修改顯示座標區塊位置
-  {'scroll #map_wrapper' :
-      function(e) {
-        var $map = $(e.currentTarget)
-          , left = $map.scrollLeft()
-          , top  = $map.scrollTop()
-          ;
-        $('#point_pos')
-          .css(
-            {'left' : left + 'px'
-            ,'top'  : top + 'px'
-            }
-          )
+Template.map_info_edit.events(
+  {'change input' :
+      function() {
+        
       }
   }
 )
-
-//map_info
-Template.map_info.helpers(
-  ,'hasAffect'    :
-      function() {
-        AffectData = 
-          _.chain(DetailData)
-            .filter(function(data) { return data.type === 'affect'; })
-            .sortBy(function(data) { return data.sort; })
-            .value();
-        return (AffectData.length > 0);
-      }
-  ,'allAffect'    :
-      function() {
-        return AffectData;
-      }
-  }
-)
-Template.map_info.events(
-  {'click header' :
-      function(e) {
-        $(e.currentTarget).closest('section').children('div.content').slideToggle('fast');
-      }
-  ,'click header a' :
-      function(e) {
-        e.stopPropagation();
-
-        var $this        = $(e.currentTarget)
-          , ids          = []
-          , data
-          ;
-
-        switch ($this.attr('data-fn')) {
-        case 'add':
-          data =
-            {'map'   : MapData._id
-            ,'round' : MapData.round
-            }
-          switch ($this.attr('data-type')) {
-          case 'affect':
-            data.type   = 'affect';
-            data.name   = '未命名效應';
-            data.until  = data.round;
-            data.desc   = '';
-            data.hide   = '';
-            data.affect = [];
-            break;
-          case 'land':
-            data.type  = 'land';
-            data.name  = '未命名地型';
-            data.show  = 'land';
-            data.color = '#FFFFFF';
-            data.desc  = '';
-            data.hide  = '';
-            data.light = 0;
-            data.shadow = 0;
-            data.minusView = 0;
-            data.isHideTo = [];
-            break;
-          case 'unit':
-            data.type = 'unit';
-            data.name = '未命名單位';
-            data.token = '？';
-            data.desc  = '';
-            data.hide  = '';
-            data.character = false;
-            data.maxhp = 10;
-            data.hp = 10;
-            data.light = 0;
-            data.shadow = 0;
-            data.minusView = 0;
-            data.sightNormal = 20;
-            data.sightLowLight = 0;
-            data.sightDark = 0;
-            data.sightBlind = 0;
-            data.hiddenTo = [];
-            data.isPublicView = false;
-            break;
-          }
-          Meteor.call('getTime', function(err, now) {
-            data._id = (now + '');
-            DB.map_detail.insert(data);
-            callEditForm([ data._id ]);
-          });
-          break;
-        case 'editAll':
-          $this.closest('section').find('section[data-id]').each(function() {
-            ids.push( $(this).attr('data-id') );
-          });
-          callEditForm(ids);
-          break;
-        case 'edit':
-          $this.closest('section').find('div.content:visible').each(function() {
-            var id = $(this).parent().attr('data-id');
-            if (id) {
-              ids.push(id);
-            }
-          });
-          callEditForm(ids);
-          break;
-        }
-      }
-  //view
-  ,'change input.grid_size' :
-      function(e) {
-        var size = e.currentTarget.value;
-        $.rule('#map_table th,#map td', 'style').css({'min-width' : size + 'px', 'height' : size + 'px'});
-      }
-  ,'change input.unit_size' :
-      function(e) {
-        var size = e.currentTarget.value;
-        $.rule('#map_table th, #map_table td', 'style').css('font-size', size + 'px');
-        $.rule('#map_table td img', 'style').css({'width' : size + 'px', 'height' : size + 'px;'});
-      }
-  }
-)
-Template.map_info.rendered =
-    function() {
-      //只執行一次
-      if (this.firstNode && ! this.inited) {
-        var form = document.getElementById('map_info')
-          , grid = form.grid_size
-          , unit = form.unit_size
-          , gridSize
-          , unitSize
-          ;
-
-        //只執行一次
-        this.inited = true;
-        if (STORE('map_gridSize')) {
-          gridSize = STORE('map_gridSize');
-          grid.value = gridSize;
-        }
-        else {
-          gridSize = '30';
-          STORE('map_gridSize', gridSize);
-          grid.value = gridSize;
-        }
-        if (STORE('map_unitSize')) {
-          unitSize = STORE('map_unitSize');
-          unit.value = unitSize;
-        }
-        else {
-          unitSize = '22';
-          STORE('map_unitSize', unitSize);
-          unit.value = unitSize;
-        }
-
-        $.rule('#map_table th,#map td {min-width:' + gridSize +'px;height:' + gridSize +'px;}').appendTo('style');
-        $.rule('#map_table th, #map_table td {font-size:' + unitSize + 'px;}').appendTo('style');
-        $.rule('#map_table td img {width:' + unitSize + 'px;height:' + unitSize + 'px;}').appendTo('style');
-      }
-    }
-
-//map_table
-var makeGridsRow =
-    _.memoize(
-      function(x, y) {
-        var result = []
-          , i
-          ;
-
-        for (i = 1; i <= x; i += 1) {
-          result.push(
-            {'x' : i
-            ,'y' : y
-            }
-          );
-        }
-        return result;
-      }
-    , MAP.hashFn
-    )
-Template.map_table.helpers(
-  {'loaded'   :
-      function() {
-        var RouterParams = Session.get('RouterParams')
-          , map          = DB.map.findOne(RouterParams.map)
-          ;
-        if (map) {
-          MapData = map;
-          return true;
-        }
-        else {
-          return false;
-        }
-      }
-  ,'sizeX'    :
-      function() {
-        return _.range(1, MapData.sizeX + 1);
-      }
-  ,'sizeY'    :
-      function() {
-        return _.range(1, MapData.sizeY + 1);
-      }
-  ,'GridsRow' :
-      function(sizeY) {
-        var sizeX = MapData.sizeX
-          , i
-          , result
-          ;
-
-        return makeGridsRow(sizeX, sizeY);
-      }
-  }
-);
-Template.map_table.events(
-  //顯示座標
-  {'mouseenter td' :
-      function(e) {
-        var $td = $(e.currentTarget);
-        e.stopPropagation();
-
-        $('#point_pos')
-          .find('span.x')
-            .text($td.attr('data-x'))
-            .end()
-          .find('span.y')
-            .text($td.attr('data-y'));
-      }
-  }
-)
-*/

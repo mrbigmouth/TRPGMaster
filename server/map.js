@@ -60,6 +60,7 @@ DB.map_grid.allow(
           }
         }
         if (result) {
+          doc._id = Date.now() + '';
           if (map.section) {
             DB.record.update(map.section, {'$set' : {'time' : Date.now() } });
           }
@@ -153,6 +154,7 @@ DB.map_detail.allow(
           }
         }
         if (result) {
+          doc._id = Date.now() + '';
           if (map.section) {
             DB.record.update(map.section, {'$set' : {'time' : Date.now() } });
           }

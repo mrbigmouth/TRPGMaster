@@ -251,17 +251,29 @@
       <g transform="{{transform}}">
         <g class="girdLabel">
           {{#each gridLabel}}
-            <rect x="{{left}}" y="{{top}}" width="{{width}}" height="{{height}}"></rect>
-            <text x="{{textLeft}}" y="{{textTop}}">{{text}}</text>
+            <rect x="{{this.left}}" y="{{this.top}}" width="{{this.width}}" height="{{this.height}}"></rect>
+            <text x="{{this.textLeft}}" y="{{this.textTop}}">{{this.text}}</text>
           {{/each}}
+        </g>
+        <g class="grid">
           {{#each grids}}
+            {{> map_svg_grid}}
           {{/each}}
         </g>
       </g>
     </svg>
   </svg>
 </template>
-<template name="map_grid">
+<template name="map_svg_grid">
+  <rect x="{{this.left}}" y="{{this.top}}" width="{{this.width}}" height="{{this.height}}" style="{{this.style}}"></rect>
+  {{#each this.unit}}
+  {{/each}}
+  {{#each this.mist}}
+    <rect class="mist" x="{{this.left}}" y="{{this.top}}" width="{{this.width}}" height="{{this.height}}" style="{{this.style}}"></rect>
+  {{/each}}
+  {{#each this.wall}}
+    <line x1="{{this.x1}}" y1="{{this.y1}}" x2="{{this.x2}}" y2="{{this.y2}}" style="{{this.style}}" />
+  {{/each}}
 </template>
 
 <!-- 資訊面板 -->
