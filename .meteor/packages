@@ -5,10 +5,13 @@
 
 standard-app-packages
 underscore
-less
 accounts-base
 accounts-facebook
 accounts-google
 accounts-password
 jquery-layout
 iron:router
+multiply:iron-router-progress
+stylus
+meteorhacks:fast-render
+meteorhacks:subs-manager
