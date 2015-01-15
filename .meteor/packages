@@ -14,3 +14,4 @@ multiply:iron-router-progress
 stylus
 meteorhacks:fast-render
 meteorhacks:subs-manager
+reactive-var
