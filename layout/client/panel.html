@@ -1,0 +1,112 @@
+<template name="panel_links">
+  <a class="brand" href="/">TRPG Master 3.0</a>
+  {{#if this.room}}
+    <div>
+      <i class="fa fa-chevron-right"></i>
+      <a class="brand" href="/{{this.room._id}}">{{this.room.name}}</a>
+      {{#if this.character}}
+        <div>
+          <i class="fa fa-chevron-right"></i>
+          <a class="brand" href="/{{this.room._id}}/character/{{this.character._id}}">{{this.character.name}}</a>
+        </div>
+      {{/if}}
+      {{#if this.chapter}}
+        <div>
+          <i class="fa fa-chevron-right"></i>
+          <a class="brand" href="/{{this.room._id}}/chapter/{{this.chapter._id}}">{{this.chapter.name}}</a>
+          {{#if this.map}}
+            <div>
+              <i class="fa fa-chevron-right"></i>
+              <a class="brand" href="/{{this.room._id}}/chapter/{{this.chapter._id}}/{{this.section._id}}/{{this.map._id}}">{{this.map.name}}</a>
+            </div>
+          {{/if}}
+        </div>
+      {{/if}}
+    </div>
+  {{/if}}
+</template>
+
+<template name="panel_accordion">
+  <div class="panel-group">
+    {{#if this.room}}
+    {{else}}
+      {{> panel_accordion_base}}
+    {{/if}}
+  </div>
+</template>
+
+<template name="panel_accordion_base">
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab">
+      <h4 class="panel-title">
+        <a href="{{pathFor route='home'}}" class="collapsed" data-toggle="collapse" aria-expanded="false">
+          教學說明
+        </a>
+      </h4>
+    </div>
+    <div class="panel-collapse collapse" role="tabpanel">
+      <div class="panel-body">
+        {{#each nowRoom}}
+        {{/each}}
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab">
+      <h4 class="panel-title collapsed" data-toggle="collapse" aria-expanded="false">
+        <a href="javascript:;">
+          進行中的遊戲
+        </a>
+      </h4>
+    </div>
+    <div class="panel-collapse collapse" role="tabpanel">
+      <div class="panel-body">
+        {{#each nowRoom}}
+          {{this.name}}
+        {{/each}}
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab">
+      <h4 class="panel-title">
+        <a href="javascript:;" class="collapsed" data-toggle="collapse" aria-expanded="false">
+          進行中的遊戲
+        </a>
+      </h4>
+    </div>
+    <div class="panel-collapse collapse" role="tabpanel">
+      <div class="panel-body">
+        {{#each nowRoom}}
+        {{/each}}
+      </div>
+    </div>
+  </div>
+</template>
+
+<template name="panel_accordion_room">
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab">
+      <h4 class="panel-title">
+        <a href="javascript:;" class="collapsed" data-toggle="collapse" aria-expanded="false">
+          背景設定
+        </a>
+      </h4>
+    </div>
+    <div class="panel-collapse collapse" role="tabpanel">
+      <div class="panel-body"></div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab">
+      <h4 class="panel-title">
+        <a href="javascript:;" class="collapsed" data-toggle="collapse" data-parent="#panel_accordion" aria-expanded="false">
+          背景設定
+        </a>
+      </h4>
+    </div>
+    <div class="panel-collapse collapse" role="tabpanel">
+      <div class="panel-body"></div>
+    </div>
+  </div>
+</template>

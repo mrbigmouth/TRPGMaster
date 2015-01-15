@@ -1,12 +1,129 @@
-#main {
-  padding: 10px;
-}
-
+//loading圖示
 #iron-router-progress {
     background-color : #0095da;
     box-shadow       : 0 0 5px #0095da;
 }
-
 #iron-router-progress.spinner:before {
     border-color : #0095da;
+}
+
+//layout區塊
+.layout_pane {
+  .layout_warpper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+
+    .layout_handle {
+      position: absolute;
+      z-index: 10;
+      background: #93c54b;
+      
+      .layout_toggler{
+        position: absolute;
+        cursor: pointer;
+        background-color : #79a736;
+        vertical-align: middle;
+        text-align: center;
+      }
+    }
+  }
+}
+
+#up_warpper {
+  position: relative;
+}
+
+#main {
+  height: 100%;
+}
+
+#panel {
+  position: absolute;
+  left: 0;
+  height: 100%;
+
+  .layout_handle {
+    right: 0;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    cursor: ew-resize;
+
+    .layout_toggler{
+      right: 0;
+      top: 50%;
+      width: 15px;
+      line-height: 35px;
+    }
+  }
+}
+#panel.opened {
+  width: 200px;
+  min-width: 200px;
+
+  .layout_toggler{
+    i:before {
+      content: "\f104";
+    }
+  }
+}
+#panel.closed {
+  width: 15px;
+  min-width: 15px;
+
+  .layout_content {
+    display: none;
+  }
+
+  .layout_toggler{
+    i:before {
+      content: "\f105";
+    }
+  }
+}
+
+#message {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+
+  .layout_handle {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 3px;
+    cursor: ns-resize;
+
+    .layout_toggler{
+      left: 50%;
+      top: 0;
+      height: 15px;
+      width: 35px;
+    }
+  }
+}
+#message.opened {
+  height: 100px;
+  min-height: 100px;
+
+  .layout_toggler{
+    i:before {
+      content: "\f107";
+    }
+  }
+}
+#message.closed {
+  height: 15px;
+  min-height: 15px;
+
+  .layout_content {
+    display: none;
+  }
+
+  .layout_toggler{
+    i:before {
+      content: "\f077";
+    }
+  }
 }

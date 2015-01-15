@@ -9,7 +9,6 @@ accounts-base
 accounts-facebook
 accounts-google
 accounts-password
-jquery-layout
 iron:router
 multiply:iron-router-progress
 stylus

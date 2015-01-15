@@ -1,26 +1,52 @@
 <head>
-  <title>TRPG Master V3.0</title>
+  <title>TRPG Master version 3.0</title>
   <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" media="all" rel="stylesheet" />
   <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" media="all" rel="stylesheet" />
-  <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" media="all" rel="stylesheet" />
-  <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+  <link href="//maxcdn.bootstrapcdn.com/bootswatch/3.3.1/sandstone/bootstrap.min.css" media="all" rel="stylesheet" />
 </head>
-
-<template name="layout">
-  <div class="ui-layout-center" id="main">
-    {{>yield}}
-  </div>
-  {{>yield "north"}}
-  {{>yield "south"}}
-  {{>yield "west"}}
-  <!-- copy right declare -->
-  <footer style="display:none;"></footer>
-</template>
 
 <template name="notFound">
   404，找不到網址所請求的資源
 </template>
 
+
 <template name="loading">
   載入中...
+</template>
+
+<template name="layout">
+  <div id="up_warpper">
+    <aside id="panel" class="layout_pane">
+      <div class="layout_warpper">
+        <div class="layout_content">
+          <header>
+            {{> panel_links this}}
+          </header>
+          {{> panel_accordion this}}
+        </div>
+        <div class="layout_handle">
+          <div class="layout_toggler">
+            <i class="fa"></i>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <div id="main">
+      {{> yield}}
+    </div>
+  </div>
+  <aside id="message" class="layout_pane">
+    <div class="layout_warpper">
+      <div class="layout_content">
+        Message
+      </div>
+      <div class="layout_handle">
+        <div class="layout_toggler">
+          <i class="fa"></i>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <!-- copy right declare -->
+  <footer style="display:none;"></footer>
 </template>

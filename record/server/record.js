@@ -4,7 +4,7 @@ Meteor.publish(
   "record"
 , function () {
     var publisher = this;
-    console.log(DB.record.find().count());
+    console.log("publish record!");
     return DB.record.find();
   }
 );

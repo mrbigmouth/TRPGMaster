@@ -1,3 +1,18 @@
 <template name="header">
-  <a href="{{pathFor route='home'}}">Home</a>
+  <nav class="ui-layout-north navbar" id="nav">
+    <div class="navbar-inner">
+      <a class="brand" href="/">TRPG Master version 3.0</a>
+      <i class="icon-chevron-up pull-right close" title="關閉導覽列"></i>
+ 
+      <div class="pull-right user">
+        {{#if currentUser}}
+          <span class="label label-success">使用者 {{currentUser.profile.nick}} 已登入</span>
+          <a href="javascript:" class="account">修改帳戶資訊</a>
+          　<a href="javascript:" class="logout">登出</a>
+        {{else}}
+          <a href="javascript:" class="login">點此登入</a>
+        {{/if}}
+      </div>
+    </div>
+  </nav>
 </template>
