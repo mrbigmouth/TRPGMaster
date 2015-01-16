@@ -1,3 +1,4 @@
+"use strict";
 var DB = require("db");
 Meteor.methods(
   {"updateOldMSG" :

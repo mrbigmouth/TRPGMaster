@@ -1,3 +1,17 @@
+"use strict";
+//require start
+require(
+  ["db"
+  ,"config"
+  ,"util"
+  ]
+, function() {
+
+var DB    = require("db")
+  , TOOL  = require("util")
+  , TRPG  = require("config")
+  ;
+
 Template.message.helpers(
   //篩選列-所有房間
   {"allRooms" :
@@ -16,19 +30,14 @@ Template.message.helpers(
 );
 
 
-//改變訊息列篩選條件
-var MsgDep        = new Deps.Dependency()
-  , MsgFilter     = {}
-  , changeFilter
-  ;
-changeFilter =
-    function(data) {
-      if (! EJSON.equals(MsgFilter, data)) {
-        MsgFilter = data;
-        MsgDep.changed();
-      }
-    }
-
+//訊息列篩選條件
+var msgFilter     =
+      new ReactiveVar(
+        {}
+      , function(oldData, newData) {
+          return EJSON.equals(oldData, newData);
+        }
+      );
 //篩選訊息列
 Template.message.events(
   {"change #message_filter select, change #message_filter input" :
@@ -37,46 +46,47 @@ Template.message.events(
           , room    = $filter.find("select").val()
           , $type   = $filter.find("input.type:checked")
           , types   = []
+          , filter  =
+              {"time" : {"$gte" : Date.now() - 604800000}
+              }
           ;
 
-        MsgFilter = {"time" : {"$gte" : Date.now() - 604800000}};
         if (room !== "") {
-          MsgFilter.room = room;
+          filter.room = room;
         }
         $type.each(function() {
           types.push( this.name );
         });
-        MsgFilter.type = {"$in" : types};
-        MsgDep.changed();
+        filter.type = {"$in" : types};
+        msgFilter.set(filter);
       }
   }
-)
+);
 
+var scrollDown =
+      _.debounce(
+        function() {
+          var $message = $("#message_list");
+          $message.scrollTop( $message.prop("scrollHeight") );
+        }
+      , 100);
 Template.message_list.helpers(
   //所有訊息
   {"allMsgs"     :
       function () {
-        MsgDep.depend();
-        var cursor     = DB.message_all.find(MsgFilter, {"sort" : {"time" : 1} })
-          , scrollDown =
-              _.debounce(
-                function() {
-                  var $message = $("#message_list");
-                  $message.scrollTop( $message.prop("scrollHeight") );
-                }
-              , 100)
+        var cursor     =
+              DB.message_all.find(
+                msgFilter.get()
+              , {"sort" : {"time" : 1} }
+              )
           ;
 
         cursor.observeChanges(
           {"added" :
-              function(id, fields) {
-                var layout   = $("body").data("layout")
-                  , $message = $("#message_list")
-                  ;
+              function() {
+                var layout = require("layout");
                 //有新訊息時打開訊息列
-                if (layout && typeof layout.open === "function") {
-                  layout.open("south");
-                }
+                layout.openPane("message");
                 scrollDown();
               }
           }
@@ -133,7 +143,7 @@ Template.message_list.helpers(
         else {
           result = number + "d" + face + addSign + add + "結果為 ";
           result += record.join(",");
-          result += " 總合為"
+          result += " 總合為";
           result += _.reduce(record, function(memo, v) { return memo + v;}, add);
           result += " 。";
         }
@@ -152,38 +162,40 @@ Template.message_list.helpers(
         return !!(this.character);
       }
   }
-)
+);
 
 //發言
-var toChat =
-    function (e, ins) {
-      var $msg  = $(ins.find("input.msg"))
-        , param = Session.get("RouterParams")
-        , data
-        , temp
-        ;
-
-      data = 
-        {"type" : "chat"
-        ,"msg"  : $msg.val()
-        }
-      if (temp = param.room) {
-        data.room = temp;
-        if (temp = param.chapter) {
-          data.chapter = temp;
-          if (temp = $(e.currentTarget).attr("data-section")) {
-            data.section = temp;
-          }
-        }
-      }
-      else {
-        data.room = TRPG.public._id;
-      }
-      DB.message_all.insert(data);
-      $msg.val("");
-    }
 Template.message_chat.events(
   //發聊天訊息
-  {"click button.btn"   : toChat
+  {"click button.btn"   :
+      function (e, ins) {
+        var $msg  = $(ins.find("input.msg"))
+          , param = ins.data
+          , data
+          , temp
+          ;
+
+        data = 
+          {"type" : "chat"
+          ,"msg"  : $msg.val()
+          };
+        temp = param.room;
+        if (temp) {
+          data.room = temp;
+          temp = param.chapter;
+          if (temp) {
+            data.chapter = temp;
+          }
+        }
+        else {
+          data.room = TRPG.public._id;
+        }
+        DB.message_all.insert(data);
+        $msg.val("");
+      }
+  }
+);
+
+//require end
   }
 );
