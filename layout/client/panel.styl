@@ -1,0 +1,26 @@
+#panel {
+  .panel-group {
+    //覆寫bootstrap的間距5px
+    .panel+.panel {
+      margin-top: 0;
+    }
+    .panel {
+      .panel-heading {
+        cursor: pointer;
+        //覆寫bootstrap的padding
+        padding: 5px;
+      }
+      .panel-body {
+        //覆寫bootstrap的padding
+        padding: 3px;
+
+        ul.nav {
+          a {
+            //覆寫bootstrap的padding
+            padding:3px;
+          }
+        }
+      }
+    }
+  }
+}

@@ -109,7 +109,7 @@ function initializePane(ins) {
     }
   );
   $(window).on("resize", ins.resizePane);
-  ins.resizePane();
+  _.defer(ins.resizePane);
   //調整pane大小
   ins.resizing = null;
   $(document).on(
