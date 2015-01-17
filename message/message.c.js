@@ -125,8 +125,8 @@ Template.message_list.helpers(
         var record  = this.result
           , number  = record.length
           , face    = this.face
-          , add     = this.add
-          , addSign = ((add >= 0) ? "+ " : "")
+          , add     = this.add + this.extra
+          , addSign = ((add >= 0) ? "+ " : "- ")
           , sum     = 0
           , result
           ;
