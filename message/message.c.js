@@ -29,6 +29,30 @@ Template.message.helpers(
   }
 );
 
+Template.message.events(
+  //開啟篩選列
+  {"click .openFilter" :
+      function(e, ins) {
+        $("#message").addClass("filterOpened");
+      }
+  //關閉篩選列
+  ,"click .closeFilter" :
+      function(e, ins) {
+        $("#message").removeClass("filterOpened");
+      }
+  //開啟聊天列
+  ,"click .openChat" :
+      function(e, ins) {
+        $("#message").addClass("chatOpened");
+      }
+  //開啟聊天列
+  ,"click .closeChat" :
+      function(e, ins) {
+        $("#message").removeClass("chatOpened");
+      }
+  }
+);
+
 
 //訊息列篩選條件
 var msgFilter     =
@@ -84,10 +108,12 @@ Template.message_list.helpers(
         cursor.observeChanges(
           {"added" :
               function() {
-                var layout = require("layout");
-                //有新訊息時打開訊息列
-                layout.openPane("message");
-                scrollDown();
+                var layout = require("layout").ins;
+                if (layout) {
+                  //有新訊息時打開訊息列
+                  layout.openPane("message");
+                  scrollDown();
+                }
               }
           }
         );
@@ -167,17 +193,21 @@ Template.message_list.helpers(
 //發言
 Template.message_chat.events(
   //發聊天訊息
-  {"click button.btn"   :
+  {"submit #message_chat" :
       function (e, ins) {
-        var $msg  = $(ins.find("input.msg"))
+        var input = ins.find("#message_chat_send")
+          , value = input.value.replace(/^[\s]*|[\s]*$/g, "")
           , param = ins.data
           , data
           , temp
           ;
 
+        if (! value) {
+          return false;
+        }
         data = 
           {"type" : "chat"
-          ,"msg"  : $msg.val()
+          ,"msg"  : input.value
           };
         temp = param.room;
         if (temp) {
@@ -191,7 +221,7 @@ Template.message_chat.events(
           data.room = TRPG.public._id;
         }
         DB.message_all.insert(data);
-        $msg.val("");
+        input.value = "";
       }
   }
 );

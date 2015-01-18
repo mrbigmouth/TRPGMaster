@@ -1,11 +1,14 @@
-"use strict";
-var DB = require("db");
+﻿"use strict";
+var DB    = require("db")
+  , TRPG  = require("config")
+  ;
 Meteor.methods(
   {"updateOldMSG" :
       function (message) {
         var filter    = _.omit(message, "_id", "time")
           , now       = Date.now()
           , timeLimit
+          , oldMessage
           ;
         oldMessage = DB.message_all.findOne(filter, {"sort" : { "time" : -1 }});
         if (oldMessage) {

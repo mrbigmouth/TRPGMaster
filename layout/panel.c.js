@@ -1,3 +1,12 @@
+//require start
+"use strict";
+define(
+  "layout"
+, ["db"
+  ]
+, function() {
+
+var DB = require("db");
 Template.panel_accordion.helpers(
   {"user" :
       function() {
@@ -44,4 +53,9 @@ Template.panel_accordion_base.helpers(
         return DB.room.find({"status" : {"$gte" : 3}});
       }
   }
+);
+
+
+//require end
+ }
 );
