@@ -10,6 +10,11 @@
     <div class="panel-collapse collapse" role="tabpanel">
       <div class="panel-body">
         <ul class="nav nav-pills nav-stacked">
+          {{#each chapter}}
+            <li>
+              <a href="/room/{{../room._id}}/record/{{this._id}}">{{this.name}}</a>
+            </li>
+          {{/each}}
         </ul>
       </div>
     </div>

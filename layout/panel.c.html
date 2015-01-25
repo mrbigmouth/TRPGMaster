@@ -1,3 +1,13 @@
+<template name="panel_user">
+{{#if currentUser}}
+  登入身份：{{currentUser.profile.nick}}
+  <a href="javascript:;" title="登出" class="text-warning logout"><i class="fa fa-sign-out"></i></a>
+{{else}}
+  <span class="label label-warning">登入身份：訪客</span>
+  <a href="javascript:;" title="登入" class="text-success login"><i class="fa fa-sign-in"></i></a>
+{{/if}}
+</template>
+
 <template name="panel_links">
   <a class="brand" href="/">TRPG Master 3.0</a>
   {{#if this.explain}}
@@ -65,10 +75,10 @@
       </div>
     </div>
   </div>
-  {{#if isLogIn}}
+  {{#if currentUser}}
     <div class="panel panel-default">
       <div class="panel-heading" role="tab">
-        <h4 class="panel-title" data-toggle="collapse" aria-expanded="false">
+        <h4 class="panel-title" aria-expanded="false">
           <a href="javascript:;">
             我參與的故事
           </a>
@@ -79,7 +89,7 @@
           <ul class="nav nav-pills nav-stacked">
             {{#each myRoom}}
               <li>
-                <a href="/room/{{this._id._str}}">{{this.name}}</a>
+                <a href="/room/{{this._id}}">{{this.name}}</a>
               </li>
             {{/each}}
           </ul>
@@ -90,7 +100,7 @@
   <div class="panel panel-default">
     <div class="panel-heading" role="tab">
       <h4 class="panel-title">
-        <a href="javascript:;" data-toggle="collapse" aria-expanded="false">
+        <a href="javascript:;" aria-expanded="false">
           進行中的故事
         </a>
       </h4>
@@ -110,7 +120,7 @@
   <div class="panel panel-default">
     <div class="panel-heading" role="tab">
       <h4 class="panel-title">
-        <a href="javascript:;" data-toggle="collapse" aria-expanded="false">
+        <a href="javascript:;" aria-expanded="false">
           已完結的故事
         </a>
       </h4>

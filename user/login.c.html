@@ -1,0 +1,95 @@
+<body>
+  {{> login_dialog}}
+  {{> register_dialog}}
+</body>
+
+<template name="login_dialog">
+  <div class="modal fade" id="login_dialog">
+    <div class="modal-dialog modal-sm">
+      <form action="javascript:" class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">
+            使用者登入
+            <button type="button" class="close" data-dismiss="modal">
+              <span aria-hidden="true">&times;</span>
+              <span class="sr-only">Close</span>
+            </button>
+          </h4>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <label for="email" class="col-xs-12">
+              <strong>登入帳號或電子郵箱：</strong>
+              <input type="text" name="email" class="form-control input-sm" />
+            </label>
+          </div>
+          <div class="row">
+            <label for="password" class="col-xs-12">
+              <strong>密碼：</strong>
+              <input type="password" name="password" class="form-control input-sm" />
+            </label>
+          </div>
+          <div class="row">
+            <div class="col-xs-12">
+              <a href="javascript:" class="facebook">以Facebook帳號註冊/登入</a>
+              <br />
+              <a href="javascript:" class="google">以Google帳號註冊/登入</a>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer text-right">
+          <button type="button" class="btn btn-default">註冊</button>
+          <button type="submit" class="btn btn-primary">登入</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<template name="register_dialog">
+  <div class="modal fade" id="register_dialog">
+    <div class="modal-dialog modal-sm">
+      <form action="javascript:" class="modal-content">
+        <div class="modal-header">
+          <h4 class="modal-title">
+            使用者註冊
+            <button type="button" class="close" data-dismiss="modal">
+              <span aria-hidden="true">&times;</span>
+              <span class="sr-only">Close</span>
+            </button>
+          </h4>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <label for="email" class="col-xs-12">
+              <strong>電子郵箱：</strong>
+              <input type="email" name="email" class="form-control input-sm" />
+            </label>
+          </div>
+          <div class="row">
+            <label for="email" class="col-xs-12">
+              <strong>暱稱：</strong>
+              <input type="text" name="nick" class="form-control input-sm" />
+            </label>
+          </div>
+          <div class="row">
+            <label for="password" class="col-xs-12">
+              <strong>密碼：</strong>
+              <input type="password" name="password" class="form-control input-sm" />
+            </label>
+          </div>
+          <div class="row">
+            <label for="password" class="col-xs-12">
+              <strong>確認密碼：</strong>
+              <input type="password" name="confirm_password" class="form-control input-sm" />
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer text-right">
+          <button type="reset" class="btn btn-default">重設</button>
+          <button type="submit" class="btn btn-primary">註冊</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>

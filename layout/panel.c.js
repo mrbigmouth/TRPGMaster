@@ -1,12 +1,24 @@
 //require start
 "use strict";
-define(
-  "layout"
-, ["db"
+require(
+  ["db"
   ]
 , function() {
 
 var DB = require("db");
+
+Template.panel_user.events(
+  {"click a.logout" :
+      function() {
+        Meteor.logout();
+      }
+  ,"click a.login" :
+      function() {
+        $("#login_dialog").modal("show");
+      }
+  }
+);
+
 Template.panel_accordion.helpers(
   {"user" :
       function() {
@@ -42,7 +54,17 @@ Template.panel_accordion.events(
 Template.panel_accordion_base.helpers(
   {"myRoom" :
       function() {
-        return DB.room.find({"player" : Meteor.userId()});
+        return DB.room.find(
+          {"$or"  :
+              [{"player" : Meteor.userId()}
+              ,{"adm"    : Meteor.userId()}
+              ]
+          }
+        , {"sort" :
+              {"status" : 1
+              }
+          }
+        );
       }
   ,"nowRoom" :
       function() {

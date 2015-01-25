@@ -1,4 +1,16 @@
-//左側導覽謝
+//require start
+require(
+  ["db"
+  ,"config"
+  ,"util"
+  ]
+, function() {
+
+var DB      = require("db")
+  , CONFIG  = require("config")
+  , util    = require("util")
+  ;
+//左側導覽列
 Template.panel_accordion_room.helpers(
   {"chapter" :
       function() {
@@ -13,4 +25,8 @@ Template.panel_accordion_room.helpers(
         return result;
       }
   }
+);
+
+//require end
+ }
 );
