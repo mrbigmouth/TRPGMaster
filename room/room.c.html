@@ -1,9 +1,24 @@
 <template name="panel_accordion_room">
   <div class="panel panel-default">
-    <div class="panel-heading" role="tab">
-      <h4 class="panel-title" data-toggle="collapse" aria-expanded="false">
+    <div class="panel-heading">
+      <h4 class="panel-title">
         <a href="javascript:;">
           背景資料
+        </a>
+      </h4>
+    </div>
+    <div class="panel-collapse collapse">
+      <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab">
+      <h4 class="panel-title" aria-expanded="false">
+        <a href="javascript:;">
+          遊戲紀錄
         </a>
       </h4>
     </div>
@@ -20,17 +35,17 @@
     </div>
   </div>
   <div class="panel panel-default">
-    <div class="panel-heading" role="tab">
-      <h4 class="panel-title" data-toggle="collapse" aria-expanded="false">
+    <div class="panel-heading">
+      <h4 class="panel-title">
         <a href="javascript:;">
-          遊戲紀錄
+          角色列表
         </a>
       </h4>
     </div>
-    <div class="panel-collapse collapse" role="tabpanel">
+    <div class="panel-collapse collapse">
       <div class="panel-body">
         <ul class="nav nav-pills nav-stacked">
-          {{#each chapter}}
+          {{#each character}}
             <li>
               <a href="/room/{{../room._id}}/record/{{this._id}}">{{this.name}}</a>
             </li>

@@ -1,0 +1,77 @@
+section.record-section {
+  i.fa {
+    font-size: 14px;
+    cursor: pointer;
+  }
+  article {
+    div, p, header, footer {
+      margin: 0;
+    }
+    p {
+      font-size: 14px;
+      text-indent: 28px;
+      cursor: pointer;
+    }
+    header, footer {
+      font-style: italic;
+      text-align: right;
+      display: none;
+      a {
+        margin: 10px;
+      }
+    }
+    div.be-editing, div.editing, div.focus {
+      display: none;
+    }
+  }
+  
+  //article的focus, editing, be-editing三種狀態
+  article.focus {
+    border: 1px dashed #2fa4e7;
+    > header, > footer {
+      display: block;
+
+      div.focus {
+        display: block;
+      }
+      div.editing, div.be-editing {
+        display: none;
+      }
+    }
+  }
+  article.editing {
+    border: 1px dashed #b94a48;
+    > header, > footer {
+      display: block;
+
+      div.editing {
+        display: block;
+      }
+      div.be-editing, div.focus {
+        display: none;
+      }
+    }
+  }
+  article.be-editing {
+    border: 1px dashed #b94a48;
+    > header, > footer {
+      display: block;
+
+      div.be-editing {
+        display: block;
+      }
+      div.editing, div.focus {
+        display: none;
+      }
+    }
+  }
+  aside {
+    text-align: right;
+    a {
+      margin: 10px;
+    }
+  }
+  aside.outside {
+    text-align: left;
+  }
+}

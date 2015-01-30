@@ -1,0 +1,97 @@
+<template name="section">
+  <section id="{{this._id}}" class="record-section">
+    <header>
+      <h1>
+        {{this.name}}
+        {{#if isAdm}}
+          <i class="fa fa-pencil fa-1" title="編輯標題" data-action="editTitle"></i>
+        {{/if}}
+        <i class="fa fa-eye fa-1" title="選取全段落" data-action="selectAll"></i>
+        <i class="fa fa-eye-slash fa-1" title="全段落取消選取" data-action="cancelAll"></i>
+      </h1>
+    </header>
+    <div class="content">
+      {{#each allParagraph}}
+        {{> section_paragraph}}
+      {{/each}}
+      <aside class="tool">
+        {{#if isAdm}}
+          <a href="javascript:" data-action="addParagraph" title="此章節尾端添加內容">添加</a>
+        {{/if}}
+        <a href="javascript:" data-action="outside" title="場外發言，並紀錄在本章節尾部">場外</a>
+        <a href="javascript:" data-action="wait" title="指示系統此章節正等待某位玩家或DM行動">等待</a>
+        {{#if isPlayer}}
+          <a href="javascript:" data-action="dice" title="進行擲骰，並紀錄在本章節尾部">擲骰</a>
+        {{/if}}
+        {{#if this.map}}
+          <a href="/room/{{this.room}}/record/{{this.chapter}}//map/{{this._id}}/" title="查看地圖" target="_blank">地圖</a>
+        {{else}}
+          {{#if isAdm}}
+            <a href="javascript:" class="createMap" title="創建或指定本章節的地圖">地圖</a>
+          {{/if}}
+        {{/if}}
+      </aside>
+      <aside class="text-warning outside">
+        {{> section_outside}}
+      </aside>
+    </div>
+    <hr />
+  </section>
+</template>
+
+<template name="section_paragraph">
+  <article {{status}}>
+    <header class="tool">
+      <div class="focus">
+        <a href="javascript:" title="取消選取此段落">取消選取</a>
+        <a href="javascript:" title="在此段落前新增段落" data-action="addBefore">插入</a>
+        <a href="javascript:" title="在此段落後新增段落" data-action="addAfter">接續</a>
+        <a href="javascript:" title="編輯此段落" data-action="edit">編輯</a>
+        <a href="javascript:" title="刪除此段落" data-action="delete">刪除</a>
+      </div>
+      <div class="editing">
+        <a href="javascript:" data-action="submit">送出修改</a>
+        <a href="javascript:" data-action="stopEdit">取消修改</a>
+      </div>
+      <div class="be-editing">
+        {{#if overTime}}
+          <a href="javascript:" data-action="stopEdit">中止修改</a>
+        {{/if}}
+      </div>
+    </header>
+    <div class="paragraph" {{editable}}>
+      <p>{{#if content}}{{{content}}}{{else}}本節目前無內容。{{/if}}</p>
+    </div>
+    <footer>
+      {{#if this.editing}}
+        <time>本文正由 {{getNick this.editing}} 編輯中</time>
+      {{else}}
+        <time>本文最後由 {{getNick this.user}} 於 {{timeChinese this.time}} 編輯</time>
+      {{/if}}
+    </footer>
+  </article>
+</template>
+
+<template name="section_outside">
+  <ul>
+    {{#each allOutside}}
+      <li>
+        <span>{{timeChinese this._id}}</span>
+        {{#if typeOutside}}
+          <span>{{getNick this.user}}：</span>
+          <span>{{msg}}</span>
+        {{/if}}
+        {{#if typeDice}}
+          {{#if this.result}}
+            {{#if this.isHide}}
+              <span class="badge badge-inverse">暗骰</span>
+            {{/if}}
+            <span>{{getNick user}}為{{this.who}}擲了一次{{this.name}}骰{{#if this.note}}（{{this.note}}）{{/if}} {{diceResult}}</span>
+          {{else}}
+            <span>擲骰結果載入中...</span>
+          {{/if}}
+        {{/if}}
+      </li>
+    {{/each}}
+  </ul>
+</template>

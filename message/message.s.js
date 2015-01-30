@@ -32,6 +32,10 @@ Meteor.methods(
           return false;
         }
       }
+  ,"addMessage" :
+      function(doc) {
+        
+      }
   }
 );
 

@@ -1,4 +1,7 @@
-var DB = require("db");
+"use strict";
+var DB    = require("db")
+  , TRPG  = require("config")
+  ;
 
 DB.record.allow(
   {"insert" :
@@ -40,7 +43,6 @@ DB.record.allow(
       function(userID, doc) {
         var result = false
           , now    = Date.now()
-          , content= doc.conent
           , room
           ;
         //若修改者為最近一次的修改者則通過
@@ -121,75 +123,52 @@ DB.record.allow(
   }
 );
 
-Meteor.publish("chapter", function (room, chapter, sectionID) {
-  var secionFilter =
-      {"$or" :
-        //訂閱所有一週內更新的section
-        [ {"room"    : room
-          ,"chapter" : chapter
-          ,"section" : {"$exists" : false}
-          ,"time"    : {"$gte" : (Date.now() - 604800000)}
+Meteor.publish(
+  "chapter"
+, function (roomId, chapterId) {
+    var secionFilter =
+          {"$or" :
+            [ {"room"    : roomId
+              ,"section" : {"$exists" : false}
+              }
+            ]
           }
-        //指定的section
-        , {"_id" : sectionID}
-        ]
+      , first        =
+          DB.record.findOne(
+            {"room"     : roomId
+            ,"chapter"  : chapterId
+            ,"section"  : {"$exists" : false}
+            }
+          , {"sort" : {"sort" : 1}
+            }
+          )
+      ;
+
+    //條件中新增已訂閱的section下的所有段落
+    secionFilter.$or.push(
+      {"section" : first._id
       }
-    , section    = DB.record.find(secionFilter)
-    , sectionIds = _.pluck(section.fetch(), "_id")
-    ;
+    );
+    return [
+      DB.record.find(secionFilter)
+    //章節下的所有擲骰跟場外訊息
+    , DB.message_all.find({"chapter" : chapterId, "type" : {"$in" : ["outside", "dice"]}})
+    ];
+  }
+);
 
-  //條件中新增已訂閱的section下的所有段落
-  secionFilter.$or.push(
-    {"room"    : room
-    ,"chapter" : chapter
-    ,"section" : {"$in" : sectionIds}
-    }
-  );
-  //移除第一條件，改為訂閱所有section
-  secionFilter.$or.shift();
-  secionFilter.$or.push(
-    {"room"    : room
-    ,"chapter" : chapter
-    ,"section" : {"$exists" : false}
-    }
-  );
-  
+
+Meteor.publish("section", function (roomId, chapterId, sectionId) {
   return [
-    DB.record.find(secionFilter)
+    DB.record.find(
+      {"section" : sectionId}
+    )
   //已訂閱章節下的所有擲骰跟場外訊息
-  , DB.message_all.find({"chapter" : chapter, "type" : {"$in" : ["outside", "dice"]}})
-  ];
-});
-
-
-Meteor.publish("section", function (section) {;
-  return [
-    DB.record.find(section)
-  //, DB.message_all.find({"section" : section})
+  , DB.message_all.find({"chapter" : chapterId, "type" : {"$in" : ["outside", "dice"]}})
   ];
 });
 
 /*
-Meteor.methods(
-  {"paragraphIncrement" :
-    function(room, chapter, section, from, inc) {
-      DB.record.update({"room"    : room
-                       ,"chapter" : chapter
-                       ,"section" : section
-                       ,"sort"    : { "$gte" : from }
-                      }
-                      ,{"$inc"    :
-                          {"sort" : inc
-                          }
-                       }
-                      ,{"multi"   : true}
-                      );
-      return true;
-    }
-  }
-)
-
-
 function strip_tags (input, allowed) {
   // http://kevin.vanzonneveld.net
   // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)

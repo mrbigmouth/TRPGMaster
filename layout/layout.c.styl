@@ -38,6 +38,10 @@
   }
 }
 
+body {
+  overflow: hidden;
+}
+
 #up_warpper {
   position: relative;
 }
@@ -45,6 +49,7 @@
 #main {
   height: 100%;
   padding: 10px;
+  overflow: auto;
 }
 
 #panel {
@@ -64,6 +69,15 @@
       width: 100%;
       min-height: initial;
       padding: 3px;
+    }
+
+    #panel_links {
+      div {
+        margin-left: 10px;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+      }
     }
   }
 

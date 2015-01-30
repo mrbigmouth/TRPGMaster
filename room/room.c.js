@@ -24,6 +24,17 @@ Template.panel_accordion_room.helpers(
           );
         return result;
       }
+  ,"character" :
+      function() {
+        var result;
+        result =
+          DB.character.find(
+            {"room"     : this.room._id
+            }
+          , {"sort"     : {"sort" : 1}}
+          );
+        return result;
+      }
   }
 );
 

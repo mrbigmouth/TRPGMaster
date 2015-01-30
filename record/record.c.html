@@ -1,0 +1,40 @@
+<template name="panel_accordion_chapter">
+  {{#each chapter}}
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a href="/room/{{../room._id}}/record/{{this._id}}">
+          {{this.name}}
+        </a>
+      </h4>
+    </div>
+    <div class="panel-collapse collapse">
+      <div class="panel-body">
+        <ul class="nav nav-pills nav-stacked">
+          {{#each section this._id}}
+            <li>
+              <a href="/room/{{../../room._id}}/record/{{../_id}}/{{this._id}}">{{this.name}}</a>
+            </li>
+          {{/each}}
+          {{#if isAdm room}}
+            <li>
+              <a href="javascript:;" data-action="addSection">新增一節</a>
+            </li>
+          {{/if}}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {{/each}}
+  {{#if isAdm room}}
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h4 class="panel-title">
+          <a href="javascript:;" data-action="addChapter">
+            新增一章
+          </a>
+        </h4>
+      </div>
+    </div>
+  {{/if}}
+</template>

@@ -148,32 +148,7 @@ Template.message_list.helpers(
       }
   ,"diceResult"  :
       function() {
-        var record  = this.result
-          , number  = record.length
-          , face    = this.face
-          , add     = this.add + this.extra
-          , addSign = ((add >= 0) ? "+ " : "- ")
-          , sum     = 0
-          , result
-          ;
-        if (this.addEach) {
-          result = "[1d" + face + addSign + add + "] x " + number + "結果分別為 ";
-          result += 
-              (_.map(record, function(v) {
-                var total = v + add;
-                sum += total;
-                return v + "(" + ( total ) + ")";
-              })).join(",");
-          result += " 總合為 " + sum + " 。";
-        }
-        else {
-          result = number + "d" + face + addSign + add + "結果為 ";
-          result += record.join(",");
-          result += " 總合為";
-          result += _.reduce(record, function(memo, v) { return memo + v;}, add);
-          result += " 。";
-        }
-        return result;
+        return TOOL.parseDice(this);
       }
   ,"isRecord"    :
       function() {

@@ -9,33 +9,41 @@
 </template>
 
 <template name="panel_links">
-  <a class="brand" href="/">TRPG Master 3.0</a>
-  {{#if this.explain}}
-  {{/if}}
-  {{#if this.room}}
-    <div>
-      <i class="fa fa-chevron-right"></i>
-      <a class="brand" href="/{{this.room._id}}">{{this.room.name}}</a>
-      {{#if this.character}}
-        <div>
-          <i class="fa fa-chevron-right"></i>
-          <a class="brand" href="/{{this.room._id}}/character/{{this.character._id}}">{{this.character.name}}</a>
-        </div>
-      {{/if}}
-      {{#if this.chapter}}
-        <div>
-          <i class="fa fa-chevron-right"></i>
-          <a class="brand" href="/{{this.room._id}}/chapter/{{this.chapter._id}}">{{this.chapter.name}}</a>
-          {{#if this.map}}
+  <div id="panel_links">
+    <a class="brand" href="/">TRPG Master 3.0</a>
+    {{#if this.explain}}
+    {{/if}}
+    {{#if this.room}}
+      <div>
+        <i class="fa fa-chevron-right"></i>
+        <a class="brand" href="/{{this.room._id}}" title="{{this.room.name}}">{{this.room.name}}</a>
+        {{#if this.character}}
+          <div>
+            <i class="fa fa-chevron-right"></i>
+            <a class="brand" href="/{{this.room._id}}/character/{{this.character._id}}" title="{{this.character.name}}">{{this.character.name}}</a>
+          </div>
+        {{/if}}
+        {{#if this.chapter}}
+          <div>
+            <i class="fa fa-chevron-right"></i>
+            <a class="brand" href="/{{this.room._id}}/chapter/{{this.chapter._id}}" title="{{this.chapter.name}}">{{this.chapter.name}}</a>
+            {{#if this.section}}
             <div>
               <i class="fa fa-chevron-right"></i>
-              <a class="brand" href="/{{this.room._id}}/chapter/{{this.chapter._id}}/{{this.section._id}}/{{this.map._id}}">{{this.map.name}}</a>
+              <a class="brand" href="/{{this.room._id}}/chapter/{{this.chapter._id}}/{{this.section._id}}" title="{{this.section.name}}">{{this.section.name}}</a>
+              {{#if this.map}}
+                <div>
+                  <i class="fa fa-chevron-right"></i>
+                  <a class="brand" href="/{{this.room._id}}/chapter/{{this.chapter._id}}/{{this.section._id}}/{{this.map._id}}" title="{{this.map.name}}">{{this.map.name}}</a>
+                </div>
+              {{/if}}
             </div>
-          {{/if}}
-        </div>
-      {{/if}}
-    </div>
-  {{/if}}
+            {{/if}}
+          </div>
+        {{/if}}
+      </div>
+    {{/if}}
+  </div>
 </template>
 
 <template name="panel_accordion">
@@ -44,7 +52,11 @@
       {{#if this.map}}
         {{> panel_accordion_map}}
       {{else}}
-        {{> panel_accordion_room}}
+        {{#if this.chapter}}
+          {{> panel_accordion_chapter}}
+        {{else}}
+          {{> panel_accordion_room}}
+        {{/if}}
       {{/if}}
     {{else}}
       {{> panel_accordion_base}}
