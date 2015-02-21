@@ -3,14 +3,41 @@ var DB    = require("db")
   , TRPG  = require("config")
   ;
 Meteor.methods(
-  {"updateOldMSG" :
+  {"insertMessage" :
       function (message) {
-        var filter    = _.omit(message, "_id", "time")
-          , now       = Date.now()
+        var now       = Date.now()
+          , userId    = this.userId
           , timeLimit
           , oldMessage
+          , authorize
+          , room
           ;
-        oldMessage = DB.message_all.findOne(filter, {"sort" : { "time" : -1 }});
+        check(
+          message
+        , {"_id"      : Match.Optional(String)
+          ,"type"     : String
+          ,"msg"      : String
+          ,"room"     : Match.Optional(String)
+          ,"chapter"  : Match.Optional(String)
+          ,"section"  : Match.Optional(String)
+          ,"time"     : Match.Optional(Number)
+          ,"user"     : Match.Optional(String)
+          }
+        );
+
+        //防止client端資訊錯誤，由server端給定值
+        message._id = (now + "");
+        message.time = now;
+        message.user = userId;
+
+        //找尋最新的相同紀錄
+        oldMessage =
+            DB.message_all.findOne(
+              _.omit(message, "_id", "time")
+            , {"sort" : { "time" : -1 }
+              }
+            );
+        //若有相同紀錄，檢測時間是否距離過近
         if (oldMessage) {
           switch (message.type) {
           case "chat"    :
@@ -24,72 +51,60 @@ Meteor.methods(
           case "room"    :
             //一小時內
             timeLimit = 3600000;
+            break;
           }
+          //若時間過近
           if (now - oldMessage.time <= timeLimit) {
-            DB.message_all.update(oldMessage._id, { "$set" : {"time" : now} });
-            return true;
+            //更新舊訊息的時間為現在，然後中止插入
+            DB.message_all.update(
+              oldMessage._id
+            , {"$set" : {"time" : now}
+              }
+            );
+            return oldMessage;
           }
-          return false;
         }
-      }
-  ,"addMessage" :
-      function(doc) {
-        
+
+        //權限驗證
+        authorize = false;
+        if (userId === TRPG.adm || doc.room === TRPG.public._id) {
+          authorize = true;
+        }
+        else {
+          room = DB.room.findOne(doc.room);
+          if (room && (room.adm.indexOf(userId) !== -1 || room.player.indexOf(userId) !== -1)) {
+            authorize = true;
+          }
+        }
+        if (authorize) {
+          DB.message_all.insert(message);
+          return message;
+        }
+        else {
+          throw new Meteor.Error(401, "Unauthorized for user [" + userId + "]");
+        }
       }
   }
 );
 
 DB.message_all.allow(
   {"insert" :
-      function(userID, doc) {
-        var result  = false
-          , now     = Date.now()
-          , filter  = _.omit(doc, "_id", "time")
-          , oldMessage
-          , timeLimit
-          ;
-
-        if (Meteor.call("updateOldMSG", doc) === true) {
-          return false;
-        }
-
-        doc._id = (now + "");
-        doc.time = now;
-        doc.user = userID;
-        if (userID === TRPG.adm || doc.room === TRPG.public._id) {
-          result = true;
-        }
-        else {
-          var room = DB.room.findOne(doc.room);
-          if (room && (room.adm.indexOf(userID) !== -1 || room.player.indexOf(userID) !== -1)) {
-            result = true;
-          }
-        }
-        if (result) {
-          if (doc.section) {
-            DB.record.update(doc.section, {"$set" : {"time" : now } }, _.identity);
-          }
+      function(userId, doc) {
+        if (userId == TRPG.adm) {
           return true;
         }
-        else {
-          return false;
-        }
+        return false;
       }
   ,"update" :
-      function(userID, doc) {
-        if (userID === TRPG.adm) {
-          return true;
-        }
-        var room = DB.room.findOne(doc.room);
-        if (room && room.adm.indexOf(userID) !== -1) {
-          DB.message_all.update(doc._id, {$set : {"time" : Date.now() }}, _.identity)
+      function(userId, doc) {
+        if (userId === TRPG.adm) {
           return true;
         }
         return false;
       }
   ,"remove" :
-      function(userID, doc) {
-        if (userID == TRPG.adm) {
+      function(userId, doc) {
+        if (userId == TRPG.adm) {
           return true;
         }
         return false;

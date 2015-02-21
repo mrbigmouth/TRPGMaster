@@ -2,120 +2,199 @@
 var DB    = require("db")
   , TRPG  = require("config")
   ;
-
-DB.record.allow(
-  {"insert" :
-      function(userID, doc) {
-        var result = false
+Meteor.methods(
+  {"upsertRecord" :
+      function (record) {
+        var now       = Date.now()
+          , userId    = this.userId
+          , timeLimit
+          , authorize
           , room
+          , message
+          , msg
           ;
-        doc.time = Date.now();
-        doc._id = (doc.time + "");
-        doc.user = userID;
-        if (userID === TRPG.adm || doc.room === TRPG.public.id) {
-          result = true;
+        check(
+          record
+        , {"_id"      : Match.Optional(String)
+          ,"name"     : Match.Optional(String)
+          ,"room"     : String
+          ,"chapter"  : Match.Optional(String)
+          ,"section"  : Match.Optional(String)
+          ,"content"  : Match.Optional(String)
+          ,"sort"     : Match.Integer
+          ,"time"     : Match.Optional(Number)
+          ,"user"     : Match.Optional(String)
+          ,"editing"  : 
+              Match.Optional(
+                Match.OneOf(String, Boolean)
+              )
+          }
+        );
+        authorize = false;
+        if (userId === TRPG.adm || record.room === TRPG.public.id) {
+          authorize = true;
         }
         else {
-          room = DB.room.findOne({"_id" : doc.room});
-          if (room && (room.adm.indexOf(userID) !== -1 || room.player.indexOf(userID) !== -1)) {
-            result = true;
+          room = DB.room.findOne({"_id" : record.room});
+          if (room && (room.adm.indexOf(userId) !== -1 || room.player.indexOf(userId) !== -1)) {
+            authorize = true;
           }
         }
-        //確定修改後
-        if (result) {
-          //若修改之文件有section，同步修改其時間
-          if (doc.section) {
-            DB.record.update(doc.section, {"$set" : {"time" : doc.time } });
+
+        //確定可upsert
+        if (authorize) {
+          //修改
+          if (record._id) {
+            record.time = now;
+            record.user = userId;
+            DB.record.update(record._id, record);
+            msg = "修改了一筆遊戲紀錄。";
           }
-          //若修改之文件有chapter，同步修改其時間
-          if (doc.chapter) {
-            DB.record.update(doc.chapter, {"$set" : {"time" : doc.time } });
+          //新增
+          else {
+            record._id = (now + "");
+            record.time = now;
+            record.user = userId;
+            DB.record.insert(record);
+            msg = "新增了一筆遊戲紀錄。";
           }
-          //若修改之文件有room，同步修改其時間
-          if (doc.room) {
-            DB.room.update(doc.room, {"$set" : {"time" : doc.time } });
+          //插入紀錄
+          if (record.section) {
+            message = 
+              {"room"    : record.room
+              ,"chapter" : record.chapter
+              ,"section" : record.section
+              ,"type"    : "room"
+              ,"msg"     : msg
+              ,"user"    : userId
+              };
           }
+          else {
+            message = 
+              {"room"    : record.room
+              ,"chapter" : record.chapter
+              ,"type"    : "room"
+              ,"msg"     : msg
+              ,"user"    : userId
+              };
+          }
+          Meteor.call("insertMessage", message);
+          return record;
+        }
+        //權限不符
+        else {
+          throw new Meteor.Error(401, "Unauthorized for user [" + userId + "]");
+        }
+      }
+  ,"incrementParagraphSort" :
+      function(sectionId, from, inc) {
+        var section = DB.record.findOne(sectionId)
+          , userId  = this.userId
+          , authorize
+          , room
+          ;
+        check(sectionId, String);
+        check(from, Match.Integer);
+        check(inc, Match.Integer);
+        //驗證權限
+        if (section && userId) {
+          authorize = false;
+          if (userId === TRPG.adm || section.room === TRPG.public.id) {
+            authorize = true;
+          }
+          else {
+            room = DB.room.findOne({"_id" : section.room});
+            if (room && (room.adm.indexOf(userId) !== -1 || room.player.indexOf(userId) !== -1)) {
+              authorize = true;
+            }
+          }
+          if (authorize) {
+            DB.record.update(
+              {"room"    : section.room
+              ,"chapter" : section.chapter
+              ,"section" : section._id
+              ,"sort"    : {"$gte" : from}
+              }
+            , {"$inc"    : {"sort" : inc}
+              }
+            , {"multi"   : true}
+            );
+          }
+          return true;
+        }
+        throw new Meteor.Error(401, "Unauthorized for section [" + sectionId + "] with user [" + userId + "]");
+      }
+  ,"switchParagraphSort" :
+      function(recordId1, recordId2) {
+        var record1 = DB.record.findOne(recordId1)
+          , record2 = DB.record.findOne(recordId2)
+          ;
+        if (record1 && record2) {
+          DB.record.update(
+            record1._id
+          , {"$set" : {"sort" : record2.sort}
+            }
+          );
+          DB.record.update(
+            record2._id
+          , {"$set" : {"sort" : record1.sort}
+            }
+          );
+          return true;
+        }
+        throw new Meteor.Error(403, "Cant find paragraph [" + recordId1 + "] or [" + recordId2 + "]");
+      }
+  }
+);
+DB.record.allow(
+  {"insert" :
+      function(userId, doc) {
+        if (userId == TRPG.adm) {
           return true;
         }
         return false;
       }
   ,"update" :
-      function(userID, doc) {
-        var result = false
-          , now    = Date.now()
-          , room
-          ;
-        //若修改者為最近一次的修改者則通過
-        if (userID == doc.user) {
-          result = true;
-        }
-        else {
-          doc.user = userID;
-          //若修改者為總adm則通過
-          if (userID === TRPG.adm) {
-            result = true;
-          }
-          else {
-            //若修改者為room adm則通過
-            room = DB.room.findOne({"_id" : doc.room});
-            if (room && room.adm.indexOf(userID) !== -1) {
-              result = true;
-            }
-          }
-        }
-        //確定修改後
-        if (result) {
-          //更新最後更新時間
-          DB.record.update({"_id" : doc._id}, {"$set" : {"time" : now } });
-          //若修改之文件有section，同步修改其時間
-          if (doc.section) {
-            DB.record.update({"_id" : doc.section}, {"$set" : {"time" : now } });
-          }
-          //若修改之文件有chapter，同步修改其時間
-          if (doc.chapter) {
-            DB.record.update({"_id" : doc.chapter}, {"$set" : {"time" : now } });
-          }
-          //若修改之文件有room，同步修改其時間
-          if (doc.room) {
-            DB.room.update({"_id" : doc.room}, {"$set" : {"time" : now } });
-          }
+      function(userId, doc) {
+        if (userId == TRPG.adm) {
           return true;
         }
         return false;
       }
   ,"remove" :
-      function(userID, doc) {
-        var result = false
-          , now    = Date.now()
+      function(userId, record) {
+        var now    = Date.now()
+          , authorize
+          , message
           ;
-        if (userID === TRPG.adm || userID == doc.user) {
-          result = true;
+        authorize = false;
+        if (userId === TRPG.adm || userId == record.user) {
+          authorize = true;
         }
-        var room = DB.room.findOne({"_id" : doc.room});
-        if (room && room.adm.indexOf(userID) !== -1) {
-          result = true;
+        var room = DB.room.findOne({"_id" : record.room});
+        if (room && room.adm.indexOf(userId) !== -1) {
+          authorize = true;
         }
-        //確定修改後
-        if (result) {
-          //更新最後更新時間
-          DB.record.update({"_id" : doc._id}, {"$set" : {"time" : now } });
-          //若修改之文件有section，同步修改其時間
-          if (doc.section) {
-            DB.record.update({"_id" : doc.section}, {"$set" : {"time" : now } });
+        //確定移除後
+        if (authorize) {
+          if (record.section) {
+            message = 
+              {"room"    : record.room
+              ,"chapter" : record.chapter
+              ,"section" : record.section
+              ,"type"    : "room"
+              ,"msg"     : "移除了一筆遊戲紀錄。"
+              };
           }
-          //若修改之文件無section有chapter(為section)
-          else if (doc.chapter) {
-            //刪除所對應之地圖
-            DB.map.remove({"section" : doc._id});
+          else {
+            message = 
+              {"room"    : record.room
+              ,"chapter" : record.chapter
+              ,"type"    : "room"
+              ,"msg"     : "移除了一筆遊戲紀錄。"
+              };
           }
-          //若修改之文件有chapter，同步修改其時間
-          if (doc.chapter) {
-            DB.record.update({"_id" : doc.chapter}, {"$set" : {"time" : now } });
-          }
-          //若修改之文件有room，同步修改其時間
-          if (doc.room) {
-            DB.room.update({"_id" : doc.room}, {"$set" : {"time" : now } });
-          }
+          Meteor.call("insertMessage", message);
           return true;
         }
         return false;
@@ -126,6 +205,8 @@ DB.record.allow(
 Meteor.publish(
   "chapter"
 , function (roomId, chapterId) {
+    check(roomId, String);
+    check(chapterId, String);
     var secionFilter =
           {"$or" :
             [ {"room"    : roomId
@@ -158,15 +239,31 @@ Meteor.publish(
 );
 
 
-Meteor.publish("section", function (roomId, chapterId, sectionId) {
-  return [
-    DB.record.find(
-      {"section" : sectionId}
-    )
-  //已訂閱章節下的所有擲骰跟場外訊息
-  , DB.message_all.find({"chapter" : chapterId, "type" : {"$in" : ["outside", "dice"]}})
-  ];
-});
+Meteor.publish(
+  "section"
+, function (roomId, chapterId, sectionId) {
+    check(roomId, String);
+    check(chapterId, String);
+    check(sectionId, String);
+    return [
+      DB.record.find(
+        {"$or" :
+          //該章節
+          [ {"_id" : sectionId}
+          //該章節下所有段落
+          , {"section" : sectionId}
+          //該房間下所有chapter（for panel）
+          , {"room"    : roomId
+            ,"section" : {"$exists" : false}
+            }
+          ]
+        }
+      )
+    //已訂閱章節下的所有擲骰跟場外訊息
+    , DB.message_all.find({"chapter" : chapterId, "type" : {"$in" : ["outside", "dice"]}})
+    ];
+  }
+);
 
 /*
 function strip_tags (input, allowed) {

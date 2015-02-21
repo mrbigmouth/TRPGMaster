@@ -3,7 +3,7 @@
     <header>
       <h1>
         {{this.name}}
-        {{#if isAdm}}
+        {{#if isAdm this.room}}
           <i class="fa fa-pencil fa-1" title="編輯標題" data-action="editTitle"></i>
         {{/if}}
         <i class="fa fa-eye fa-1" title="選取全段落" data-action="selectAll"></i>
@@ -15,18 +15,18 @@
         {{> section_paragraph}}
       {{/each}}
       <aside class="tool">
-        {{#if isAdm}}
+        {{#if isAdm this.room}}
           <a href="javascript:" data-action="addParagraph" title="此章節尾端添加內容">添加</a>
         {{/if}}
         <a href="javascript:" data-action="outside" title="場外發言，並紀錄在本章節尾部">場外</a>
         <a href="javascript:" data-action="wait" title="指示系統此章節正等待某位玩家或DM行動">等待</a>
-        {{#if isPlayer}}
+        {{#if isPlayer this.room}}
           <a href="javascript:" data-action="dice" title="進行擲骰，並紀錄在本章節尾部">擲骰</a>
         {{/if}}
         {{#if this.map}}
           <a href="/room/{{this.room}}/record/{{this.chapter}}//map/{{this._id}}/" title="查看地圖" target="_blank">地圖</a>
         {{else}}
-          {{#if isAdm}}
+          {{#if isAdm this.room}}
             <a href="javascript:" class="createMap" title="創建或指定本章節的地圖">地圖</a>
           {{/if}}
         {{/if}}
@@ -46,6 +46,8 @@
         <a href="javascript:" title="取消選取此段落">取消選取</a>
         <a href="javascript:" title="在此段落前新增段落" data-action="addBefore">插入</a>
         <a href="javascript:" title="在此段落後新增段落" data-action="addAfter">接續</a>
+        <a href="javascript:" title="將此段落順序往前移動" data-action="moveBefore">上移</a>
+        <a href="javascript:" title="將此段落順序往後移動" data-action="moveAfter">下移</a>
         <a href="javascript:" title="編輯此段落" data-action="edit">編輯</a>
         <a href="javascript:" title="刪除此段落" data-action="delete">刪除</a>
       </div>
@@ -60,11 +62,21 @@
       </div>
     </header>
     <div class="paragraph" {{editable}}>
-      <p>{{#if content}}{{{content}}}{{else}}本節目前無內容。{{/if}}</p>
+      {{#if isUser this.editing}}{{{content}}}{{else}}
+        {{#if content}}
+            <p>{{{content}}}</p>
+        {{else}}
+          本節目前無內容。
+        {{/if}}
+      {{/if}}
     </div>
     <footer>
       {{#if this.editing}}
-        <time>本文正由 {{getNick this.editing}} 編輯中</time>
+        {{#if isUser this.editing}}
+          <time>你已於 {{timeChinese this.time}} 編輯本文 </time>
+        {{else}}
+          <time>本文正由 {{getNick this.editing}} 於 {{timeChinese this.time}} 開始編輯</time>
+        {{/if}}
       {{else}}
         <time>本文最後由 {{getNick this.user}} 於 {{timeChinese this.time}} 編輯</time>
       {{/if}}
