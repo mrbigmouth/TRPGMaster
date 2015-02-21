@@ -87,11 +87,15 @@ define(
       ins.resizePane =
           function() {
             var ins       = this
-              , left      = ins.pane.panel.$el.outerWidth(true)
-              , height    = $(window).height() - ins.pane.message.$el.outerHeight(true)
+              , left
+              , height
               ;
-            ins.$("#main").css("margin-left", left + "px");
-            ins.$("#up_warpper").css("height", height + "px");
+            if (ins.firstNode && $("body").find(ins.firstNode).length) {
+              left = ins.pane.panel.$el.outerWidth(true);
+              height = $(window).height() - ins.pane.message.$el.outerHeight(true);
+              ins.$("#main").css("margin-left", left + "px");
+              ins.$("#up_warpper").css("height", height + "px");
+            }
             return ins;
           };
       //綁定事件
