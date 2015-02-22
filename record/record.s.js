@@ -86,6 +86,21 @@ Meteor.methods(
           throw new Meteor.Error(401, "Unauthorized for user [" + userId + "]");
         }
       }
+  ,"stopEditing"  :
+      function(paragraphId) {
+        var paragraph;
+        check(paragraphId, String);
+        paragraph = DB.record.findOne(paragraphId);
+        if (this.userId === paragraph.editing || (paragraph.time + 30 * 60 * 1000) < Date.now()) {
+          DB.record.update(
+            paragraph._id
+          , {"$set" : {"editing" : false}
+            }
+          );
+          return true;
+        }
+        throw new Meteor.Error(401, "Unauthorized for paragraph [" + paragraphId + "] with user [" + this.userId + "]");
+      }
   ,"incrementParagraphSort" :
       function(sectionId, from, inc) {
         var section = DB.record.findOne(sectionId)

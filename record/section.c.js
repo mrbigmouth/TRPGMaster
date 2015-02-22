@@ -324,17 +324,16 @@ Template.section_paragraph.events(
       function(e, ins) {
         var paragraph = ins.data;
         e.stopPropagation();
-        if (paragraph.editing === Meteor.userId() || paragraph.time + 30 * 60 * 1000 > Date.now()) {
-          DB.record.update(
-            paragraph._id
-          , {"$set" : {"editing" : false}
-            }
-          , function() {
+        Meteor.call(
+          "stopEditing"
+        , paragraph._id
+        , function(error) {
+            if (! error) {
               //重置dom
               ins.$("div.paragraph").html("<p>" + paragraph.content + "</p>");
             }
-          );
-        }
+          }
+        );
       }
   }
 );
