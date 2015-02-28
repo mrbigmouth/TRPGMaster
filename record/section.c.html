@@ -21,7 +21,7 @@
         <a href="javascript:" data-action="outside" title="場外發言，並紀錄在本章節尾部">場外</a>
         <!-- <a href="javascript:" data-action="wait" title="指示系統此章節正等待某位玩家或DM行動">等待</a> -->
         {{#if isPlayer this.room}}
-          <a href="javascript:" data-action="dice" title="進行擲骰，並紀錄在本章節尾部">擲骰</a>
+          <a href="javascript:" title="進行擲骰，並紀錄在本章節之後" data-action="dice">擲骰</a>
         {{/if}}
         {{#if this.map}}
           <a href="/room/{{this.room}}/record/{{this.chapter}}//map/{{this._id}}/" title="查看地圖" target="_blank">地圖</a>
@@ -31,9 +31,7 @@
           {{/if}}
         {{/if}}
       </aside>
-      <aside class="text-warning outside">
-        {{> section_outside}}
-      </aside>
+      {{> section_outside}}
     </div>
     <hr />
   </section>
@@ -43,13 +41,16 @@
   <article {{status}}>
     <header class="tool">
       <div class="focus">
-        <a href="javascript:" title="取消選取此段落">取消選取</a>
-        <a href="javascript:" title="在此段落前新增段落" data-action="addBefore">插入</a>
-        <a href="javascript:" title="在此段落後新增段落" data-action="addAfter">接續</a>
-        <a href="javascript:" title="將此段落順序往前移動" data-action="moveBefore">上移</a>
-        <a href="javascript:" title="將此段落順序往後移動" data-action="moveAfter">下移</a>
-        <a href="javascript:" title="編輯此段落" data-action="edit">編輯</a>
-        <a href="javascript:" title="刪除此段落" data-action="delete">刪除</a>
+        <a href="javascript:" title="取消選取此段落" data-action="cancel">取消選取</a>
+        {{#if isPlayer this.room}}
+          <a href="javascript:" title="進行擲骰，並紀錄在本段落之後" data-action="dice">擲骰</a>
+          <a href="javascript:" title="在此段落前新增段落" data-action="addBefore">插入</a>
+          <a href="javascript:" title="在此段落後新增段落" data-action="addAfter">接續</a>
+          <a href="javascript:" title="將此段落順序往前移動" data-action="moveBefore">上移</a>
+          <a href="javascript:" title="將此段落順序往後移動" data-action="moveAfter">下移</a>
+          <a href="javascript:" title="編輯此段落" data-action="edit">編輯</a>
+          <a href="javascript:" title="刪除此段落" data-action="delete">刪除</a>
+        {{/if}}
       </div>
       <div class="editing">
         <a href="javascript:" data-action="submit">送出修改</a>
@@ -82,28 +83,55 @@
       {{/if}}
     </footer>
   </article>
+  {{> section_paragraph_dice}}
 </template>
 
-<template name="section_outside">
-  <ul>
-    {{#each allOutside}}
-      <li>
-        <span>{{timeChinese this._id}}</span>
-        {{#if typeOutside}}
-          <span>{{getNick this.user}}：</span>
-          <span>{{msg}}</span>
-        {{/if}}
-        {{#if typeDice}}
+<template name="section_paragraph_dice">
+  <aside class="text-warning">
+    <ul>
+      {{#each allDice}}
+        <li>
+          <span>{{timeChinese this._id}}</span>
+          {{#if typeOutside}}
+            <span>{{getNick this.user}}：</span>
+            <span>{{msg}}</span>
+          {{/if}}
           {{#if this.result}}
             {{#if this.isHide}}
               <span class="badge badge-inverse">暗骰</span>
             {{/if}}
-            <span>{{getNick user}}為{{this.who}}擲了一次{{this.name}}骰{{#if this.note}}（{{this.note}}）{{/if}} {{diceResult}}</span>
+            <span>{{parseDice this}}</span>
           {{else}}
             <span>擲骰結果載入中...</span>
           {{/if}}
-        {{/if}}
-      </li>
-    {{/each}}
-  </ul>
+        </li>
+      {{/each}}
+    </ul>
+  </aside>
+</template>
+
+<template name="section_outside">
+  <aside class="text-warning">
+    <ul>
+      {{#each allOutside}}
+        <li>
+          <span>{{timeChinese this._id}}</span>
+          {{#if typeOutside}}
+            <span>{{getNick this.user}}：</span>
+            <span>{{msg}}</span>
+          {{/if}}
+          {{#if typeDice}}
+            {{#if this.result}}
+              {{#if this.isHide}}
+                <span class="badge badge-inverse">暗骰</span>
+              {{/if}}
+              <span>{parseDice this}}</span>
+            {{else}}
+              <span>擲骰結果載入中...</span>
+            {{/if}}
+          {{/if}}
+        </li>
+      {{/each}}
+    </ul>
+  </aside>
 </template>

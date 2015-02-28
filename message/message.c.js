@@ -129,6 +129,8 @@ Template.message_list.helpers(
         room = DB.room.findOne({"_id" : room});
         return room ? room.name : "";
       }
+  //轉譯擲骰
+  ,"parseDice"   : TOOL.parseDice
   //訊息類別轉中文
   ,"typeChinese" :
       function(type) {

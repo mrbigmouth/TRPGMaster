@@ -59,7 +59,7 @@
             {{#if this.isHide}}
               <span class="badge badge-inverse">暗骰</span>
             {{/if}}
-            <span>{{getNick user}}為{{this.who}}擲了一次{{this.name}}骰{{#if this.note}}（{{this.note}}）{{/if}} {{diceResult}}</span>
+            <span>{{parseDice this}}</span>
           {{else}}
             <span>擲骰結果載入中...</span>
           {{/if}}

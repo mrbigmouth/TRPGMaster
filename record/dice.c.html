@@ -1,0 +1,119 @@
+<body>
+  {{> dice_dialog}}
+</body>
+
+<template name="dice_dialog">
+  <div class="modal fade" id="dice_dialog">
+    <div class="modal-dialog">
+      <form action="javascript:" class="modal-content form-inline">
+        <div class="modal-header">
+          <h4 class="modal-title">
+            <span>{{title}}</span>
+            <button type="button" class="close" data-dismiss="modal">
+              <span aria-hidden="true">&times;</span>
+              <span class="sr-only">Close</span>
+            </button>
+          </h4>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <label class="col-xs-12">
+              <strong>擲骰角色：</strong>
+              {{#with input_who}}
+                {{> dice_dialog_auto_complete}}
+              {{/with}}
+            </label>
+          </div>
+          <div class="row">
+            <label class="col-xs-12">
+              <strong>快速擲骰：</strong>
+              {{#with input_quick}}
+                {{> dice_dialog_auto_complete}}
+              {{/with}}
+            </label>
+          </div>
+          <div class="row">
+            <label class="col-xs-12">
+              <strong>擲骰名目：</strong>
+              <input type="text" class="input-long" name="name" />
+            </label>
+          </div>
+          <div class="row">
+            <label class="col-xs-3">
+              <strong>骰數</strong>
+              <input type="number" class="input-mini" name="amount" value="1" />
+            </label>
+            <label class="col-xs-3">
+              <strong>骰面</strong>
+              <select class="input-mini" name="face">
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="6">6</option>
+                <option value="8">8</option>
+                <option value="10">10</option>
+                <option value="12">12</option>
+                <option value="20">20</option>
+                <option value="100">100</option>
+              </select>
+            </label>
+            <label class="col-xs-3">
+              <strong>加值</strong>
+              <input type="number" class="input-mini" name="add" value="0" />
+            </label>
+            <label class="col-xs-3">
+              <strong>調整</strong>
+              <input type="number" class="input-mini" name="extra" value="0" />
+            </label>
+          </div>
+          <div class="row">
+            <label class="col-xs-12">
+              <input type="checkbox" name="addEach" />
+              <strong>各骰獨立加上調整值並分別列出結果</strong>
+            </label>
+          </div>
+          <div class="row">
+            <label class="col-xs-12">
+              <strong>擲骰備註：</strong>
+              <input type="text" class="input-long" name="note" />
+            </label>
+          </div>
+          <div class="row">
+            <label class="col-xs-12">
+              <input type="checkbox" name="isHide" />
+              <strong>將本次擲骰結果視為暗骰</strong>
+            </label>
+          </div>
+          {{#if canSaveQuick}}
+            <div class="row">
+              <label class="col-xs-12">
+                <input type="checkbox" name="isSaveAsQuick" />
+                <strong>將本次擲骰內容紀錄在這個瀏覽器上，快速擲骰名稱為</strong>
+                <input type="text" class="input-medium" name="quick_name" />
+              </label>
+            </div>
+          {{/if}}
+        </div>
+        <div class="modal-footer text-right">
+          <button type="reset" class="btn btn-default">重設</button>
+          <button type="submit" class="btn btn-primary">擲骰</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<template name="dice_dialog_auto_complete">
+  <div class="input-group auto-complete">
+    <input type="text" class="input-long" name="{{this.name}}" />
+    {{#if canDelete}}
+      <button type="button" class="btn btn-xs btn-default" data-action="delete">刪除快擲</button>
+    {{/if}}
+    <ul class="typeahead dropdown-menu">
+      {{#each options}}
+        <li data-id="{{this._id}}"><a href="javascript:;">{{this.name}}</a></li>
+      {{/each}}
+    </ul>
+  </div>
+</template>
+

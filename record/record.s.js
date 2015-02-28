@@ -1,18 +1,17 @@
 "use strict";
-var DB    = require("db")
-  , TRPG  = require("config")
-  ;
+var DB    = require("db");
+var TRPG  = require("config");
 Meteor.methods(
   {"upsertRecord" :
       function (record) {
-        var now       = Date.now()
-          , userId    = this.userId
-          , timeLimit
-          , authorize
-          , room
-          , message
-          , msg
-          ;
+        var now       = Date.now();
+        var userId    = this.userId;
+        var timeLimit;
+        var authorize;
+        var room;
+        var message;
+        var msg;
+
         check(
           record
         , {"_id"      : Match.Optional(String)
@@ -103,11 +102,10 @@ Meteor.methods(
       }
   ,"incrementParagraphSort" :
       function(sectionId, from, inc) {
-        var section = DB.record.findOne(sectionId)
-          , userId  = this.userId
-          , authorize
-          , room
-          ;
+        var section = DB.record.findOne(sectionId);
+        var userId  = this.userId;
+        var authorize;
+        var room;
         check(sectionId, String);
         check(from, Match.Integer);
         check(inc, Match.Integer);
@@ -141,9 +139,8 @@ Meteor.methods(
       }
   ,"switchParagraphSort" :
       function(recordId1, recordId2) {
-        var record1 = DB.record.findOne(recordId1)
-          , record2 = DB.record.findOne(recordId2)
-          ;
+        var record1 = DB.record.findOne(recordId1);
+        var record2 = DB.record.findOne(recordId2);
         if (record1 && record2) {
           DB.record.update(
             record1._id
@@ -158,6 +155,83 @@ Meteor.methods(
           return true;
         }
         throw new Meteor.Error(403, "Cant find paragraph [" + recordId1 + "] or [" + recordId2 + "]");
+      }
+  ,"insertDice" :
+      function(data) {
+        var now       = Date.now();
+        var userId    = this.userId;
+        var amount;
+        var face;
+        var result;
+        var message;
+        check(
+          data
+        , {"room"       : String
+          ,"chapter"    : String
+          ,"section"    : String
+          ,"paragraph"  : Match.Optional(String)
+          ,"who"        : String
+          ,"name"       : String
+          ,"amount"     : Match.Integer
+          ,"face"       : Match.Integer
+          ,"add"        : Match.Integer
+          ,"extra"      : Match.Integer
+          ,"addEach"    : Boolean
+          ,"note"       : String
+          ,"isHide"     : Boolean
+          }
+        );
+        amount = data.amount;
+        face   = data.face;
+        result = [];
+        while ((amount -= 1) >= 0) {
+          result.push( Math.floor( ( Math.random() * face ) + 1 ) );
+        }
+        
+        if (data.paragraph) {
+          message = 
+            {"_id"        : ("" + now)
+            ,"type"       : "dice"
+            ,"room"       : data.room
+            ,"chapter"    : data.chapter
+            ,"section"    : data.section
+            ,"paragraph"  : data.paragraph
+            ,"who"        : data.who
+            ,"name"       : data.name
+            ,"amount"     : data.amount
+            ,"face"       : data.face
+            ,"add"        : data.add
+            ,"extra"      : data.extra
+            ,"addEach"    : data.addEach
+            ,"isHide"     : data.isHide
+            ,"result"     : result
+            ,"user"       : userId
+            ,"time"       : now
+            };
+        }
+        else {
+          message = 
+            {"_id"        : ("" + now)
+            ,"type"       : "dice"
+            ,"room"       : data.room
+            ,"chapter"    : data.chapter
+            ,"section"    : data.section
+            ,"who"        : data.who
+            ,"name"       : data.name
+            ,"amount"     : data.amount
+            ,"face"       : data.face
+            ,"add"        : data.add
+            ,"extra"      : data.extra
+            ,"note"       : data.note
+            ,"addEach"    : data.addEach
+            ,"isHide"     : data.isHide
+            ,"result"     : result
+            ,"user"       : userId
+            ,"time"       : now
+            };
+        }
+        DB.message_all.insert(message);
+        return message;
       }
   }
 );
@@ -178,15 +252,15 @@ DB.record.allow(
       }
   ,"remove" :
       function(userId, record) {
-        var now    = Date.now()
-          , authorize
-          , message
-          ;
+        var now    = Date.now();
+        var authorize;
+        var message;
+        var room;
         authorize = false;
         if (userId === TRPG.adm || userId == record.user) {
           authorize = true;
         }
-        var room = DB.room.findOne({"_id" : record.room});
+        room = DB.room.findOne({"_id" : record.room});
         if (room && room.adm.indexOf(userId) !== -1) {
           authorize = true;
         }
@@ -209,6 +283,17 @@ DB.record.allow(
               ,"msg"     : "移除了一筆遊戲紀錄。"
               };
           }
+          //(TODO)用multi:true有時會出問題？
+          DB.message_all.find(
+            {"$or"    :
+                [ {"section"    : record._id}
+                , {"paragraph"  : record._id}
+                ]
+            }
+          )
+          .forEach(function(doc) {
+            DB.message_all.remove(doc._id);
+          });
           Meteor.call("insertMessage", message);
           return true;
         }
@@ -228,8 +313,8 @@ Meteor.publish(
               ,"section" : {"$exists" : false}
               }
             ]
-          }
-      , first        =
+          };
+    var first        =
           DB.record.findOne(
             {"room"     : roomId
             ,"chapter"  : chapterId
@@ -237,8 +322,7 @@ Meteor.publish(
             }
           , {"sort" : {"sort" : 1}
             }
-          )
-      ;
+          );
 
     //條件中新增已訂閱的section下的所有段落
     secionFilter.$or.push(
@@ -279,46 +363,3 @@ Meteor.publish(
     ];
   }
 );
-
-/*
-function strip_tags (input, allowed) {
-  // http://kevin.vanzonneveld.net
-  // +   original by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-  // +   improved by: Luke Godfrey
-  // +      input by: Pul
-  // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-  // +   bugfixed by: Onno Marsman
-  // +      input by: Alex
-  // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-  // +      input by: Marc Palau
-  // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-  // +      input by: Brett Zamir (http://brett-zamir.me)
-  // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-  // +   bugfixed by: Eric Nagel
-  // +      input by: Bobby Drake
-  // +   bugfixed by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-  // +   bugfixed by: Tomasz Wesolowski
-  // +      input by: Evertjan Garretsen
-  // +    revised by: Rafał Kukawski (http://blog.kukawski.pl/)
-  // *     example 1: strip_tags("<p>Kevin</p> <br /><b>van</b> <i>Zonneveld</i>", "<i><b>");
-  // *     returns 1: "Kevin <b>van</b> <i>Zonneveld</i>"
-  // *     example 2: strip_tags("<p>Kevin <img src="someimage.png" onmouseover="someFunction()">van <i>Zonneveld</i></p>", "<p>");
-  // *     returns 2: "<p>Kevin van Zonneveld</p>"
-  // *     example 3: strip_tags("<a href="http://kevin.vanzonneveld.net">Kevin van Zonneveld</a>", "<a>");
-  // *     returns 3: "<a href="http://kevin.vanzonneveld.net">Kevin van Zonneveld</a>"
-  // *     example 4: strip_tags("1 < 5 5 > 1");
-  // *     returns 4: "1 < 5 5 > 1"
-  // *     example 5: strip_tags("1 <br/> 1");
-  // *     returns 5: "1  1"
-  // *     example 6: strip_tags("1 <br/> 1", "<br>");
-  // *     returns 6: "1  1"
-  // *     example 7: strip_tags("1 <br/> 1", "<br><br/>");
-  // *     returns 7: "1 <br/> 1"
-  allowed = (((allowed || "") + "").toLowerCase().match(/<[a-z][a-z0-9]*>/g) || []).join(""); // making sure the allowed arg is a string containing only tags in lowercase (<a><b><c>)
-  var tags = /<\/?([a-z][a-z0-9]*)\b[^>]*>/gi,
-    commentsAndPhpTags = /<!--[\s\S]*?-->|<\?(?:php)?[\s\S]*?\?>/gi;
-  return input.replace(commentsAndPhpTags, "").replace(tags, function ($0, $1) {
-    return allowed.indexOf("<" + $1.toLowerCase() + ">") > -1 ? $0 : "";
-  });
-}
-*/

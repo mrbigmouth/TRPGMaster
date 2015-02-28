@@ -91,6 +91,15 @@ Template.section.events(
           Meteor.call("insertMessage", message);
         }
       }
+  //擲骰
+  ,"click [data-action=\"dice\"]" :
+      function(e, ins) {
+        var paragraph = ins.data;
+        e.stopPropagation();
+        //清除段落資料
+        require("router").set("paragraph", null);
+        $("#dice_dialog").modal("show");
+      }
   }
 );
 
@@ -111,6 +120,8 @@ Template.section_paragraph.helpers(
         }
         return result;
       }
+  //使否具有編輯擲骰權限
+  ,"isPlayer"       : UTIL.isPlayer
   //編輯是否已過期
   ,"overTime"     :
       function() {
@@ -147,15 +158,31 @@ Template.section_paragraph.helpers(
       }
   ,"timeChinese"  : UTIL.convertTimeToChinese
   ,"getNick"      : UTIL.getUserNick
+  ,"parseDice"    : UTIL.parseDice
   }
 );
 
 Template.section_paragraph.events(
-  //取消選取
+  //選取
   {"click" :
       function(e, ins) {
         e.stopPropagation();
-        $(ins.firstNode).toggleClass("focus");
+        $(ins.firstNode).addClass("focus");
+      }
+  //取消選取
+  ,"click [data-action=\"cancel\"]" :
+      function(e, ins) {
+        e.stopPropagation();
+        $(ins.firstNode).removeClass("focus");
+      }
+  //擲骰
+  ,"click [data-action=\"dice\"]" :
+      function(e, ins) {
+        var paragraph = ins.data;
+        e.stopPropagation();
+        //設定段落資料
+        require("router").set("paragraph", paragraph);
+        $("#dice_dialog").modal("show");
       }
   //插入
   ,"click [data-action=\"addBefore\"]" :
@@ -330,11 +357,31 @@ Template.section_paragraph.events(
         , function(error) {
             if (! error) {
               //重置dom
-              ins.$("div.paragraph").html("<p>" + paragraph.content + "</p>");
+              ins.$("div.paragraph")
+                .html("<p>" + paragraph.content + "</p>")
+                .closest("article")
+                  .removeClass("focus");
             }
           }
         );
       }
+  }
+);
+
+Template.section_paragraph_dice.helpers(
+  {"allDice"      :
+      function() {
+        return DB.message_all.find(
+          {"type"       : "dice"
+          ,"section"    : this.section
+          ,"paragraph"  : this._id
+          }
+        , {"sort"     : {"_id" : 1}
+          }
+        );
+      }
+  ,"timeChinese"  : UTIL.convertTimeToChinese
+  ,"parseDice"    : UTIL.parseDice
   }
 );
 
@@ -368,10 +415,7 @@ Template.section_outside.helpers(
       function() {
         return (this.type === "dice");
       }
-  ,"diceResult"   :
-      function() {
-        return UTIL.parseDice(this);
-      }
+  ,"parseDice"    : UTIL.parseDice
   }
 );
 
