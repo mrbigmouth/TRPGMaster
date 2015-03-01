@@ -166,7 +166,7 @@ Template.dice_dialog.helpers(
                       .val( dice_data.add )
                       .end()
                     .filter("[name=\"extra\"]")
-                      .val( dice_data.extra )
+                      .val(0)
                       .end()
                     .filter("[name=\"addEach\"]")
                       .prop("checked", dice_data.addEach)
@@ -273,7 +273,7 @@ Template.dice_dialog.events(
 
         //存為快擲
         if ($input.filter("[name=\"isSaveAsQuick\"]:visible").prop("checked")) {
-          quick = _.omit(dice, "room", "chapter", "section", "paragraph", "note");
+          quick = _.omit(dice, "room", "chapter", "section", "paragraph", "extra", "note");
           quick.name = $input.filter("[name=\"quick_name\"]").val();
           quick.character = ins.reactiveDict.get("character")._id;
 
