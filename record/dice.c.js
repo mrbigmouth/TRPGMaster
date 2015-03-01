@@ -185,55 +185,48 @@ Template.dice_dialog.helpers(
                 return true;
               }
             }
-        , "canDelete"   :
+        , "buttons"     :
             function() {
               var ins = Template.instance();
               var parent = ins.data.parent;
               var quick = parent.reactiveDict.get("quick");
-              //只有前端快擲才會有face屬性
-              return (quick && quick.face);
-            }
-        , "onDelete"    :
-            function() {
-              var ins = Template.instance();
-              var parent = ins.data.parent;
-              var quick = parent.reactiveDict.get("quick");
-              var storeQuickDice;
-              //只有前端快擲才會有face屬性
-              if (quick && quick.face) {
-                storeQuickDice = STORE("QuickDice") || {};
-                _.some(
-                  storeQuickDice
-                , function(data, key, store) {
-                    if (data.name === quick.name && data.character === quick.character) {
-                      delete store[ key ];
-                      return true;
+              if (quick) {
+                //只有前端快擲才會有face屬性
+                //只有前端快擲才有刪除按鈕
+                if (quick.face) {
+                  return [
+                    {"text"       : "刪除快擲"
+                    ,"action"     : "delete"
                     }
-                    return false;
-                  }
-                )
-                STORE("QuickDice", storeQuickDice);
-                parent.$("form").trigger("reset");
+                  ];
+                }
               }
             }
+        , "actions"     :
+            {"delete"       :
+                function(e, ins) {
+                  var parent = ins.data.parent;
+                  var quick = parent.reactiveDict.get("quick");
+                  var storeQuickDice;
+                  //只有前端快擲才會有face屬性
+                  if (quick && quick.face) {
+                    storeQuickDice = STORE("QuickDice") || {};
+                    _.some(
+                      storeQuickDice
+                    , function(data, key, store) {
+                        if (data.name === quick.name && data.character === quick.character) {
+                          delete store[ key ];
+                          return true;
+                        }
+                        return false;
+                      }
+                    )
+                    STORE("QuickDice", storeQuickDice);
+                    parent.$("form").trigger("reset");
+                  }
+                }
+            }
         };
-      }
-  ,"canSaveQuick" :
-      function() {
-        var ins = Template.instance();
-        var reactiveDict = ins.reactiveDict;
-        var quick = reactiveDict.get("quick");
-        if (quick) {
-          //如果是角色的快擲資料，只能去角色區修改
-          if (quick.type === "dice") {
-            return false;
-          }
-          //如果是儲存在前端的快擲資料，隨時可修改
-          else if (quick.type === "store") {
-            return true;
-          }
-        }
-        return true;
       }
   }
 );
@@ -344,35 +337,23 @@ Template.dice_dialog.events(
           ins.$("[name=\"isSaveAsQuick\"]").prop("checked", false);
         }
       }
-  }
-);
-
-
-Template.dice_dialog_auto_complete.created =
-  function() {
-    this.inputValue = new ReactiveVar("");
-  };
-Template.dice_dialog_auto_complete.events(
-  {"keyup input" :
+  //自動設定存為快擲名稱
+  ,"keyup [name=\"name\"]" :
       function(e, ins) {
-        ins.inputValue.set( e.currentTarget.value );
+        var value = e.currentTarget.value;
+        if (value && ins.$("[name=\"isSaveAsQuick\"]").prop("checked")) {
+          ins.$("[name=\"quick_name\"]").val(value);
+        }
       }
-  //typeahead click
-  ,"click .input-group .typeahead li" :
-    function(e, ins) {
-      var $emiter = $(e.currentTarget);
-      $emiter
-        .closest(".input-group")
-        .find(".typeahead")
-          .hide()
-          .end()
-        .find("input:first")
-          .val( $emiter.text() );
-      ins.data.onSelect( $emiter.attr("data-id"), ins);
-    }
-  ,"click [data-action=\"delete\"]" :
-    function(e, ins) {
-      ins.data.onDelete();
-    }
+  //自動設定存為快擲名稱
+  ,"change [name=\"isSaveAsQuick\"]" :
+      function(e, ins) {
+        var emiter = e.currentTarget;
+        if (emiter.checked) {
+          ins.$("[name=\"quick_name\"]").val( ins.$("[name=\"name\"]").val() );
+        }
+      }
   }
 );
+
+

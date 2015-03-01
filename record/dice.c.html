@@ -20,7 +20,7 @@
             <label class="col-xs-12">
               <strong>擲骰角色：</strong>
               {{#with input_who}}
-                {{> dice_dialog_auto_complete}}
+                {{> form_auto_complete}}
               {{/with}}
             </label>
           </div>
@@ -28,7 +28,7 @@
             <label class="col-xs-12">
               <strong>快速擲骰：</strong>
               {{#with input_quick}}
-                {{> dice_dialog_auto_complete}}
+                {{> form_auto_complete}}
               {{/with}}
             </label>
           </div>
@@ -84,15 +84,13 @@
               <strong>將本次擲骰結果視為暗骰</strong>
             </label>
           </div>
-          {{#if canSaveQuick}}
-            <div class="row">
-              <label class="col-xs-12">
-                <input type="checkbox" name="isSaveAsQuick" />
-                <strong>將本次擲骰內容紀錄在這個瀏覽器上，快速擲骰名稱為</strong>
-                <input type="text" class="input-medium" name="quick_name" />
-              </label>
-            </div>
-          {{/if}}
+          <div class="row">
+            <label class="col-xs-12">
+              <input type="checkbox" name="isSaveAsQuick" />
+              <strong>將本次擲骰內容紀錄在這個瀏覽器上，快速擲骰名稱為</strong>
+              <input type="text" class="input-medium" name="quick_name" />
+            </label>
+          </div>
         </div>
         <div class="modal-footer text-right">
           <button type="reset" class="btn btn-default">重設</button>
@@ -100,20 +98,6 @@
         </div>
       </form>
     </div>
-  </div>
-</template>
-
-<template name="dice_dialog_auto_complete">
-  <div class="input-group auto-complete">
-    <input type="text" class="input-long" name="{{this.name}}" />
-    {{#if canDelete}}
-      <button type="button" class="btn btn-xs btn-default" data-action="delete">刪除快擲</button>
-    {{/if}}
-    <ul class="typeahead dropdown-menu">
-      {{#each options}}
-        <li data-id="{{this._id}}"><a href="javascript:;">{{this.name}}</a></li>
-      {{/each}}
-    </ul>
   </div>
 </template>
 

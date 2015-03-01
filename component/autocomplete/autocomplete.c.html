@@ -1,0 +1,13 @@
+<template name="form_auto_complete">
+  <div class="input-group auto-complete">
+    <input type="text" class="input-long" name="{{this.name}}" />
+    {{#each buttons}}
+      <button type="button" class="btn btn-xs btn-default" data-action="{{this.action}}">{{this.text}}</button>
+    {{/each}}
+    <ul class="typeahead dropdown-menu">
+      {{#each options}}
+        <li data-id="{{this._id}}"><a href="javascript:;">{{this.name}}</a></li>
+      {{/each}}
+    </ul>
+  </div>
+</template>
