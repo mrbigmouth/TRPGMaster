@@ -19,3 +19,4 @@ mrt:define
 acemtp:csm
 mrt:moment
 reactive-dict
+standard-minifiers
