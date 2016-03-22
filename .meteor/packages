@@ -11,5 +11,4 @@ accounts-facebook
 accounts-google
 accounts-password
 jquery-layout
-standard-minifiers
-iron:router
+iron-router
