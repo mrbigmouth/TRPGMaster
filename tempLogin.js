@@ -1,12 +1,14 @@
 if (Meteor.isClient) {
   Meteor.startup(function() {
-    var userId = window.prompt('你是誰?');
-    Accounts.callLoginMethod({
-      methodArguments: [{userId: userId}],
-      userCallback: function() {
-        console.log(arguments);
-      }
-    });
+    if (Meteor.loggingIn()) {
+      var userId = window.prompt('你是誰?');
+      Accounts.callLoginMethod({
+        methodArguments: [{userId: userId}],
+        userCallback: function() {
+          console.log(arguments);
+        }
+      });
+    }
   });
 }
 else {
