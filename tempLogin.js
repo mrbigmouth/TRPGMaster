@@ -1,6 +1,6 @@
 if (Meteor.isClient) {
   Meteor.startup(function() {
-    if (Meteor.loggingIn()) {
+    if (!Meteor.loggingIn()) {
       var userId = window.prompt('你是誰?');
       Accounts.callLoginMethod({
         methodArguments: [{userId: userId}],
